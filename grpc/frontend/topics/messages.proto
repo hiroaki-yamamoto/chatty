@@ -1,0 +1,13 @@
+syntax = "proto3";
+package topics;
+
+message TopicInfo {
+  string id = 1;
+  string title = 2;
+  uint32 numReplies = 3;
+}
+
+message TopicRequest {
+  string boardId = 1;
+  uint32 startFrom = 2;
+}

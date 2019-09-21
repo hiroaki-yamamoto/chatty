@@ -1,0 +1,14 @@
+syntax = "proto3";
+package messages;
+
+message Message {
+  string id = 1;
+  string senderName = 2;
+  string profile = 3;
+  string message = 4;
+}
+
+message MessageRequest {
+  string topicId = 1;
+  uint32 startFrom = 2;
+}

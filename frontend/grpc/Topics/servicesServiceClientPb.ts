@@ -9,11 +9,7 @@
 
 import * as grpcWeb from 'grpc-web';
 
-import {
-  Message,
-  MessageRequest,
-  TopicInfo,
-  TopicRequest} from './topics_pb';
+import * as topics_messages_pb from '../topics/messages_pb';
 
 export class TopicServiceClient {
   client_: grpcWeb.AbstractClientBase;
@@ -35,15 +31,15 @@ export class TopicServiceClient {
   }
 
   methodInfoTopic = new grpcWeb.AbstractClientBase.MethodInfo(
-    TopicInfo,
-    (request: TopicRequest) => {
+    topics_messages_pb.TopicInfo,
+    (request: topics_messages_pb.TopicRequest) => {
       return request.serializeBinary();
     },
-    TopicInfo.deserializeBinary
+    topics_messages_pb.TopicInfo.deserializeBinary
   );
 
   topic(
-    request: TopicRequest,
+    request: topics_messages_pb.TopicRequest,
     metadata?: grpcWeb.Metadata) {
     return this.client_.serverStreaming(
       this.hostname_ +
@@ -51,25 +47,6 @@ export class TopicServiceClient {
       request,
       metadata || {},
       this.methodInfoTopic);
-  }
-
-  methodInfoMessage = new grpcWeb.AbstractClientBase.MethodInfo(
-    Message,
-    (request: MessageRequest) => {
-      return request.serializeBinary();
-    },
-    Message.deserializeBinary
-  );
-
-  message(
-    request: MessageRequest,
-    metadata?: grpcWeb.Metadata) {
-    return this.client_.serverStreaming(
-      this.hostname_ +
-        '/topics.TopicService/Message',
-      request,
-      metadata || {},
-      this.methodInfoMessage);
   }
 
 }
