@@ -16,12 +16,13 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - '{{ .Branch }}-{{ checksum "go.sum" }}'
+            - '{{ .Branch }}-{{ checksum "backend/go.sum" }}'
       - run:
           name: "Get Dependencies"
           command: "go mod download"
+          working_directory: backend
       - save_cache:
-          key: '{{ .Branch }}-{{ checksum "go.sum" }}'
+          key: '{{ .Branch }}-{{ checksum "backend/go.sum" }}'
           paths:
             - "/go"
       - run:
