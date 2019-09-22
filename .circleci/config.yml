@@ -82,17 +82,17 @@ workflows:
   version: 2
   default:
     jobs:
-      - build:
-          filters:
-            << : *dev_filter
+      # - build:
+      #     filters:
+      #       << : *dev_filter
       - frontendBuild:
           filters:
             << : *dev_filter
   version_tag:
     jobs:
-      - build:
-          filters:
-            << : *release_filter
+      # - build:
+      #     filters:
+      #       << : *release_filter
       - frontendBuild:
           filters:
             << : *release_filter
