@@ -6,7 +6,7 @@ frontendDir=frontend/grpc
 
 generateBackend() {
   for fle in grpc/*.proto; do
-    local out=${backendDir}/$(basename ${fle/.proto/})/server
+    out=${backendDir}/$(basename ${fle/.proto/})/server
     mkdir -p ${out}
     protoc --go_out=plugins=grpc:${out} -I grpc ${fle}
   done
@@ -15,7 +15,7 @@ generateBackend() {
 generateFrontend() {
   mkdir -p ${frontendDir}
   for fle in grpc/*.proto; do
-    local out=${frontendDir}/$(basename ${fle/.proto/})
+    out=${frontendDir}/$(basename ${fle/.proto/})
     mkdir -p ${out}
     protoc \
       --grpc-web_out=import_style=typescript,mode=grpcwebtext:${out} \

@@ -3,7 +3,7 @@ version: 2.1
 jobs:
   build:
     docker:
-      - image: golang:latest
+      - image: golang:alpine
         environment:
           GO111MODULE: 'on'
           DEVEL: 'true'
@@ -14,6 +14,7 @@ jobs:
           MONGO_INITDB_ROOT_PASSWORD: real
     steps:
       - checkout
+      - run: apk --no-cache --update upgrade && apk --no-cache add git gcc libc-dev ca-certificates protobuf
       - restore_cache:
           keys:
             - '{{ .Branch }}-{{ checksum "backend/go.sum" }}'
@@ -41,12 +42,19 @@ jobs:
           destination: backend
   frontendBuild:
     docker:
-      - image: node:latest
+      - image: node:alpine
     steps:
       - checkout
       - restore_cache:
           keys:
             - '{{ .Branch }}-{{ checksum "./frontend/package-lock.json" }}'
+      - run: apk --no-cache --update upgrade && apk --no-cache add git gcc libc-dev ca-certificates protobuf curl
+      - run:
+          name: "Download grpc-web"
+          command: |
+            curl https://github.com/grpc/grpc-web/releases/download/1.0.6/protoc-gen-grpc-web-1.0.6-linux-x86_64 \
+              -o /usr/local/bin/protoc-gen-grpc-web
+            chmod uog+x /usr/local/bin/protoc-gen-grpc-web
       - run:
           name: "Install Frontend Dependencies"
           working_directory: frontend
