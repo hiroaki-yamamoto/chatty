@@ -26,9 +26,6 @@ jobs:
           paths:
             - "/go"
       - run:
-          name: Generate Code
-          command: ./proto.sh backend
-      - run:
           name: "Test"
           command: |
             go test ./backend/...
@@ -55,9 +52,6 @@ jobs:
           key: '{{ .Branch }}-{{ checksum "./frontend/package-lock.json" }}'
           paths:
             - "./frontend/node_modules"
-      - run:
-          name: "Generate Code"
-          command: ./proto.sh frontend
       - run:
           name: "Lint"
           working_directory: frontend
