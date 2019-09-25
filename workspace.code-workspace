@@ -1,0 +1,18 @@
+{
+	"folders": [
+		{
+			"name": "B-F Connector",
+			"path": "./grpc"
+		}, {
+			"name": "Backend",
+			"path": "./backend"
+		}, {
+			"name": "Frontend",
+			"path": "./frontend"
+		}, {
+			"name": "root",
+			"path": "."
+		}
+	],
+	"settings": {}
+}
