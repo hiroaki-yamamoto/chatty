@@ -1,4 +1,4 @@
-module github.com/hiroaki-yamamoto/real/backend
+module github.com/hiroaki-yamamoto/real/backend/message
 
 go 1.13
 

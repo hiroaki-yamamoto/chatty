@@ -1,5 +1,6 @@
 syntax = "proto3";
-package topics;
+
+option go_package="server";
 
 message TopicInfo {
   string id = 1;
@@ -10,4 +11,8 @@ message TopicInfo {
 message TopicRequest {
   string boardId = 1;
   uint32 startFrom = 2;
+}
+
+service TopicService {
+  rpc Topic (TopicRequest) returns (stream TopicInfo);
 }

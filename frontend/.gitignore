@@ -46,4 +46,4 @@ testem.log
 Thumbs.db
 
 # Generated Directories are automatically generated.
-generated
+grpc

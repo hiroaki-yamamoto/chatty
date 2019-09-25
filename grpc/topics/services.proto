@@ -1,8 +1,0 @@
-syntax = "proto3";
-package topics;
-
-import "topics/messages.proto";
-
-service TopicService {
-  rpc Topic (topics.TopicRequest) returns (stream topics.TopicInfo);
-}

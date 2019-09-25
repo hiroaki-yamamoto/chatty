@@ -1,7 +1,7 @@
 {
 	"folders": [
 		{
-			"name": "B-F Connector",
+			"name": "grpc",
 			"path": "./grpc"
 		}, {
 			"name": "Backend",
