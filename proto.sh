@@ -1,14 +1,13 @@
 #!/bin/sh -e
 # -*- coding: utf-8 -*-
 
-backendDir=backend
+backendDir=backend/rpc
 frontendDir=frontend/grpc
 
 generateBackend() {
   for fle in grpc/*.proto; do
-    out=${backendDir}/$(basename ${fle/.proto/})/server
-    mkdir -p ${out}
-    protoc --go_out=plugins=grpc:${out} -I grpc ${fle}
+    mkdir -p ${backendDir}
+    protoc --go_out=plugins=grpc:${backendDir} -I grpc ${fle}
   done
 }
 
@@ -31,7 +30,7 @@ case $1 in
     generateFrontend
     ;;
   "clean")
-    rm -rf ${backendDir}/**/server/*.pb.go ${frontendDir}
+    rm -rf ${backendDir}/rpc ${frontendDir}
     ;;
   *)
     generateBackend
