@@ -1,8 +1,8 @@
 #!/bin/sh -e
 # -*- coding: utf-8 -*-
 
-backendDir=backend/grpc
-frontendDir=frontend/grpc
+backendDir=backend/rpc
+frontendDir=frontend/rpc
 
 generateBackend() {
   mkdir -p ${backendDir}
