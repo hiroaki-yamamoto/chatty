@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package="rpc";
+option go_package="grpc";
 
 message TopicInfo {
   string id = 1;
