@@ -2,11 +2,14 @@ syntax = "proto3";
 
 option go_package="rpc";
 
+import "google/protobuf/timestamp.proto";
+
 message Message {
   string id = 1;
   string senderName = 2;
-  string profile = 3;
-  string message = 4;
+  google.protobuf.Timestamp postTime = 3;
+  string profile = 4;
+  string message = 5;
 }
 
 message MessageRequest {

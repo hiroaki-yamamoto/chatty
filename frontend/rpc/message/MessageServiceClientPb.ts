@@ -9,6 +9,8 @@
 
 import * as grpcWeb from 'grpc-web';
 
+import * as google_protobuf_timestamp_pb from 'google-protobuf/google/protobuf/timestamp_pb';
+
 import {
   Message,
   MessageRequest} from './message_pb';
