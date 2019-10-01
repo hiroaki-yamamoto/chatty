@@ -1,0 +1,4 @@
+db:
+  URI: mongodb://real:real@localhost/
+  name: real
+  timeout: 10s
