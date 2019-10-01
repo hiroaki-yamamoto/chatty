@@ -7,12 +7,9 @@ import (
 
 // DBConfig represents a database configuration
 type DBConfig struct {
-	UserName string
-	Password string
-	Host     string
-	Port     int16
-	Name     string
-	Timeout  time.Duration
+	URI     string
+	Name    string
+	Timeout time.Duration
 }
 
 // TimeoutContext returns a context set a timeout with DBConfig.Timeout.
