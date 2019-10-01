@@ -3,17 +3,19 @@ package config
 import (
 	"context"
 	"time"
+
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
-// DBConfig represents a database configuration
-type DBConfig struct {
-	URI     string
-	Name    string
-	Timeout time.Duration
+// DB represents a database configuration
+type DB struct {
+	Timeout  time.Duration
+	Client   *mongo.Client
+	Database *mongo.Database
 }
 
 // TimeoutContext returns a context set a timeout with DBConfig.Timeout.
-func (me DBConfig) TimeoutContext(ctx context.Context) (
+func (me DB) TimeoutContext(ctx context.Context) (
 	context.Context, context.CancelFunc,
 ) {
 	return context.WithTimeout(ctx, me.Timeout)
@@ -21,5 +23,5 @@ func (me DBConfig) TimeoutContext(ctx context.Context) (
 
 // Config represents a configuration.
 type Config struct {
-	Db DBConfig
+	Db DB
 }
