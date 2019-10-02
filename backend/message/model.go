@@ -1,4 +1,4 @@
-package server
+package message
 
 import (
 	"time"
@@ -9,7 +9,7 @@ import (
 // Model indicates the model of the message.
 type Model struct {
 	ID         primitive.ObjectID `bson:"_id"`
-	TopicId    primitive.ObjectID
+	TopicID    primitive.ObjectID
 	SenderName string
 	PostTime   time.Time
 	Profile    string
