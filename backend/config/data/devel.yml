@@ -2,3 +2,7 @@ db:
   URI: mongodb://real:real@localhost/
   name: real
   timeout: 10s
+server:
+  type: 'tcp'
+  addr: ':50505'
+  timeout: 10s
