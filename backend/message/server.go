@@ -1,6 +1,8 @@
 package message
 
 import (
+	"context"
+
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/hiroaki-yamamoto/real/backend/config"
 	"github.com/hiroaki-yamamoto/real/backend/rpc"
@@ -22,36 +24,44 @@ func (me *Server) Subscribe(
 	findCtx, cancelFind := me.cfg.Db.TimeoutContext(stream.Context())
 	defer cancelFind()
 	query := bson.M{"topicId": req.TopicId}
-	cur, err := col.Find(
+	findCur, err := col.Find(
 		findCtx, query, &options.FindOptions{Skip: &start},
 	)
 	if err != nil {
 		return
 	}
-
-	for nxtCtx, stopNxt := me.cfg.Db.TimeoutContext(stream.Context()); cur.Next(nxtCtx); {
-		defer stopNxt()
-		var model Model
-		if err = cur.Decode(&model); err != nil {
-			return
-		}
-		err = stream.Send(&rpc.Message{
-			Id:         model.ID.String(),
-			SenderName: model.SenderName,
-			PostTime: &timestamp.Timestamp{
-				Seconds: model.PostTime.Unix(),
-				Nanos:   int32(model.PostTime.Nanosecond()),
-			},
-		})
-		if err != nil {
-			return
-		}
-	}
-
 	chstream, err := col.Watch(
 		stream.Context(),
 		bson.M{"$match": query},
 	)
+	if err != nil {
+		return
+	}
+
+	decode := func(cur interface {
+		Next(context.Context) bool
+		Decode(interface{}) error
+	}) {
+		for nxtCtx, stopNxt := me.cfg.Db.TimeoutContext(stream.Context()); cur.Next(nxtCtx); stopNxt() {
+			var model Model
+			if err = cur.Decode(&model); err != nil {
+				return
+			}
+			err = stream.Send(&rpc.Message{
+				Id:         model.ID.String(),
+				SenderName: model.SenderName,
+				PostTime: &timestamp.Timestamp{
+					Seconds: model.PostTime.Unix(),
+					Nanos:   int32(model.PostTime.Nanosecond()),
+				},
+			})
+			if err != nil {
+				return
+			}
+		}
+	}
+	decode(findCur)
+	decode(chstream)
 	defer chstream.Close(stream.Context())
 	return
 }
