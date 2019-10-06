@@ -1,0 +1,47 @@
+# CAUTION!! DON'T USE THIS ENV FOR PRODUCTION!!
+version: "3"
+services:
+  db:
+    image: mongo:latest
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: real
+      MONGO_INITDB_ROOT_PASSWORD: real
+    volumes:
+      - ./data/db:/data/db
+  testdb:
+    image: mongo:latest
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: real
+      MONGO_INITDB_ROOT_PASSWORD: real
+    tmpfs:
+      - /data/db
+  express:
+    image: mongo-express:latest
+    restart: unless-stopped
+    environment:
+      ME_CONFIG_MONGODB_SERVER: db
+      ME_CONFIG_MONGODB_ADMINUSERNAME: real
+      ME_CONFIG_MONGODB_ADMINPASSWORD: real
+    ports:
+      - 8081:8081
+    depends_on:
+      - db
+  message:
+    build:
+      context: ./backend
+      dockerfile: devel.dockerfile
+      args:
+        PKGNAME: message
+    stop_signal: SIGINT
+    restart: unless-stopped
+    ports:
+      - 50500:50505
+    volumes:
+      - ./backend:/opt/code
+      - ./backend/config/data:/etc/real
+    depends_on:
+      - db
+    environment:
+      CONFIG_NAME: devel
