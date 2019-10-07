@@ -31,7 +31,7 @@ services:
   message:
     build:
       context: ./backend
-      dockerfile: devel.dockerfile
+      # dockerfile: devel.dockerfile
       args:
         PKGNAME: message
     stop_signal: SIGINT
@@ -39,7 +39,7 @@ services:
     ports:
       - 50500:50505
     volumes:
-      - ./backend:/opt/code
+      # - ./backend:/opt/code
       - ./backend/config/data:/etc/real
     depends_on:
       - db
