@@ -1,4 +1,5 @@
-FROM golang:alpine AS dep
+FROM golang:alpine AS build
+ARG PKGNAME
 RUN apk --no-cache --update upgrade && apk --no-cache add git gcc libc-dev ca-certificates
 ENV GO111MODULE=on
 RUN mkdir -p /opt/code
@@ -7,7 +8,6 @@ WORKDIR /opt/code
 RUN go mod download
 RUN go generate ./${PKGNAME}
 RUN go build -o /tmp/build ./${PKGNAME}
-
 
 FROM alpine AS exec
 RUN mkdir -p /etc/real
