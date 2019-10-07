@@ -37,6 +37,10 @@ func Serve(
 		}
 	}()
 	defer close(sig)
+	log.Printf(
+		"Opening the server on %s as %s socket\n",
+		cfg.Server.Addr, cfg.Server.Type,
+	)
 	if err := svr.Serve(lis); err != nil {
 		log.Panicln("Server Start Failed: ", err)
 	}
