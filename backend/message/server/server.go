@@ -7,12 +7,14 @@ import (
 	"github.com/hiroaki-yamamoto/real/backend/config"
 	"github.com/hiroaki-yamamoto/real/backend/rpc"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // Server implements MessageServiceServer interface.
 type Server struct {
-	Setting *config.Config
+	Setting  *config.Config
+	Database *mongo.Database
 }
 
 // Subscribe handles subscribtions from users
@@ -20,7 +22,7 @@ func (me *Server) Subscribe(
 	req *rpc.MessageRequest, stream rpc.MessageService_SubscribeServer,
 ) (err error) {
 	start := int64(req.StartFrom)
-	col := me.Setting.Db.Database.Collection("messages")
+	col := me.Database.Collection("messages")
 	findCtx, cancelFind := me.Setting.Db.TimeoutContext(stream.Context())
 	defer cancelFind()
 	query := bson.M{"topicId": req.TopicId}
