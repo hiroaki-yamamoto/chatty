@@ -18,7 +18,7 @@ func TestServer(t *testing.T) {
 	RunSpecs(t, "Server Suite")
 }
 
-var db *mongo.Client
+var db *mongo.Database
 var cli rpc.MessageServiceClient
 var clicon *grpc.ClientConn
 var cfg *config.Config
@@ -29,7 +29,7 @@ var _ = BeforeSuite(func() {
 	cfg.Db.URI = "mongo://real:real@testdb"
 	cfg.Server.Type = "unix"
 	cfg.Server.Addr = "/tmp/real-test.sock"
-	db = svrutils.ConnectDB(cfg)
+	db = svrutils.ConnectDB(cfg).Database(cfg.Db.Name)
 	svr, lis := svrutils.Construct(cfg)
 
 	go func() {
@@ -48,5 +48,5 @@ var _ = BeforeSuite(func() {
 var _ = AfterSuite(func() {
 	clicon.Close()
 	svr.GracefulStop()
-	svrutils.DisconnectDB(db, &cfg.Db)
+	svrutils.DisconnectDB(db.Client(), &cfg.Db)
 })
