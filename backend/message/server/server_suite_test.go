@@ -1,7 +1,6 @@
 package server_test
 
 import (
-	"log"
 	"net"
 	"testing"
 
@@ -38,14 +37,14 @@ var _ = BeforeSuite(func() {
 
 	go func() {
 		if err := svr.Serve(lis); err != nil {
-			log.Panicln("Server Start Failed: ", err)
+			Fail("Server Start Failed: " + err.Error())
 		}
 	}()
 	if con, err := grpc.Dial(
 		cfg.Server.Type+"://"+cfg.Server.Addr,
 		grpc.WithInsecure(),
 	); err != nil {
-		log.Panicln("Connection Dial Failed: ", err)
+		Fail("Connection Dial Failed: " + err.Error())
 	} else {
 		cli = rpc.NewMessageServiceClient(con)
 		clicon = con
@@ -53,8 +52,16 @@ var _ = BeforeSuite(func() {
 })
 
 var _ = AfterSuite(func() {
-	clicon.Close()
-	svr.GracefulStop()
-	lis.Close()
-	svrutils.DisconnectDB(db.Client(), &cfg.Db)
+	if clicon != nil {
+		clicon.Close()
+	}
+	if svr != nil {
+		svr.GracefulStop()
+		if db != nil {
+		}
+		if lis != nil {
+			lis.Close()
+		}
+		svrutils.DisconnectDB(db.Client(), &cfg.Db)
+	}
 })
