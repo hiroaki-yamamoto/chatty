@@ -55,7 +55,8 @@ var _ = Describe("Message Server", func() {
 				Message: model.Message,
 			}
 		}
-		db.Collection("messages").InsertMany(ctx, cols)
+		_, err := db.Collection("messages").InsertMany(ctx, cols)
+		Expect(err).Should(BeNil())
 	})
 	AfterEach(func() {
 		ctx, cancel := cfg.Db.TimeoutContext(context.Background())

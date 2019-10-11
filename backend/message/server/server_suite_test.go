@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/hiroaki-yamamoto/real/backend/config"
+	"github.com/hiroaki-yamamoto/real/backend/message/server"
 	"github.com/hiroaki-yamamoto/real/backend/rpc"
 	"github.com/hiroaki-yamamoto/real/backend/svrutils"
 	. "github.com/onsi/ginkgo"
@@ -29,11 +30,14 @@ var svr *grpc.Server
 
 var _ = BeforeSuite(func() {
 	cfg = svrutils.LoadCfg()
-	cfg.Db.URI = "mongo://real:real@testdb"
+	cfg.Db.URI = "mongodb://real:real@testdb/"
 	cfg.Server.Type = "unix"
 	cfg.Server.Addr = "/tmp/" + PKGNAME + ".sock"
 	db = svrutils.ConnectDB(cfg).Database(cfg.Db.Name)
 	svr, lis = svrutils.Construct(cfg)
+	rpc.RegisterMessageServiceServer(
+		svr, &server.Server{Setting: cfg, Database: db},
+	)
 
 	go func() {
 		if err := svr.Serve(lis); err != nil {

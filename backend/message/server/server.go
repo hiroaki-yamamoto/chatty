@@ -34,7 +34,7 @@ func (me *Server) Subscribe(
 	}
 	chstream, err := col.Watch(
 		stream.Context(),
-		bson.M{"$match": query},
+		bson.A{bson.M{"$match": query}},
 	)
 	if err != nil {
 		return
