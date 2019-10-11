@@ -57,11 +57,11 @@ var _ = AfterSuite(func() {
 	}
 	if svr != nil {
 		svr.GracefulStop()
-		if db != nil {
-		}
-		if lis != nil {
-			lis.Close()
-		}
-		svrutils.DisconnectDB(db.Client(), &cfg.Db)
 	}
+	if db != nil {
+	}
+	if lis != nil {
+		lis.Close()
+	}
+	svrutils.DisconnectDB(db.Client(), &cfg.Db)
 })
