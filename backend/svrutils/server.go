@@ -13,12 +13,15 @@ import (
 )
 
 // Construct the server without calling Register**.
-func Construct(cfg *config.Config) (*grpc.Server, net.Listener) {
+func Construct(
+	cfg *config.Config,
+	opts ...grpc.ServerOption,
+) (*grpc.Server, net.Listener) {
 	lis, err := net.Listen(cfg.Server.Type, cfg.Server.Addr)
 	if err != nil {
 		log.Panicln(err)
 	}
-	return grpc.NewServer(), lis
+	return grpc.NewServer(opts...), lis
 }
 
 // Serve runs the server and trap int for graceful shutdown.
@@ -33,6 +36,7 @@ func Serve(
 		for range sig {
 			log.Print("Gracefully Shutting The Server Down...")
 			svr.GracefulStop()
+			lis.Close()
 			log.Print("Server Gracefuly Closed.")
 		}
 	}()

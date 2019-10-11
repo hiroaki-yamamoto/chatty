@@ -43,5 +43,6 @@ services:
       - ./backend/config/data:/etc/real
     depends_on:
       - db
+      - testdb
     environment:
       CONFIG_NAME: devel

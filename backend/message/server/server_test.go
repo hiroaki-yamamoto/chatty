@@ -81,7 +81,12 @@ var _ = Describe("Message Server", func() {
 					break
 				}
 				Expect(err).Should(BeNil())
+				actual = append(actual, msg)
+				if len(actual) >= len(models) {
+					break
+				}
 			}
+			Expect(actual).Should(Equal(models))
 		})
 	})
 })
