@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -19,7 +18,7 @@ type DB struct {
 // CreateClient creates a client to connect to the DB.
 func (me DB) CreateClient() (*mongo.Client, error) {
 	return mongo.NewClient(
-		options.Client().ApplyURI(viper.GetString("db.URI")),
+		options.Client().ApplyURI(me.URI),
 	)
 }
 
