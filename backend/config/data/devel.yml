@@ -1,5 +1,5 @@
 db:
-  URI: mongodb://real:real@db0/
+  URI: mongodb://real:real@db0,db1,db2/?replicaSet=db
   name: real
   timeout: 10s
 server:
