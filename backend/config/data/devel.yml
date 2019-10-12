@@ -1,5 +1,5 @@
 db:
-  URI: mongodb://real:real@db/
+  URI: mongodb://real:real@db0/
   name: real
   timeout: 10s
 server:
