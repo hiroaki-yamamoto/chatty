@@ -1,7 +1,7 @@
 # CAUTION!! DON'T USE THIS ENV FOR PRODUCTION!!
 version: "3"
 services:
-  db0: &db
+  db:
     image: mongo:latest
     restart: unless-stopped
     environment:
@@ -12,20 +12,9 @@ services:
       - --replSet
       - db
     volumes:
-      - ./data/db/0:/data/db
-  db1:
-    << : *db
-    depends_on:
-      - db0
-    volumes:
-      - ./data/db/1:/data/db
-  db2:
-    << : *db
-    depends_on:
-      - db0
-    volumes:
-      - ./data/db/2:/data/db
-  testdb0: &testDB
+      - ./data/db:/data/db
+      - ./config:/etc/mongo
+  testdb:
     image: mongo:latest
     restart: unless-stopped
     environment:
@@ -33,18 +22,8 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: real
     tmpfs:
       - /data/db
-    command:
-      - --bind_ip_all
-      - --replSet
-      - db
-  testdb1:
-    << : *testDB
-    depends_on:
-      - testdb0
-  testdb2:
-    << : *testDB
-    depends_on:
-      - testdb0
+    volumes:
+      - ./config:/etc/mongo
   express:
     image: mongo-express:latest
     restart: unless-stopped
@@ -68,7 +47,7 @@ services:
       - 50500:50505
     volumes:
       - ./backend:/opt/code
-      - ./backend/config/data:/etc/real
+      - ./config:/etc/real
     depends_on:
       - db0
       - testdb0
