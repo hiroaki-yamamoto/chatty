@@ -30,7 +30,7 @@ var svr *grpc.Server
 
 var _ = BeforeSuite(func() {
 	cfg = svrutils.LoadCfg()
-	cfg.Db.URI = "mongodb://real:real@testdb0,testdb1,testdb2/?replicaSet=db"
+	cfg.Db.URI = "mongodb://real:real@testdb"
 	cfg.Server.Type = "unix"
 	cfg.Server.Addr = "/tmp/" + PKGNAME + ".sock"
 	db = svrutils.ConnectDB(cfg).Database(cfg.Db.Name)
