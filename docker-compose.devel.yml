@@ -9,21 +9,8 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: real
       MONGO_INITDB_ROOT_PASSWORD: real
-    command:
-      - --replSet
-      - db
     volumes:
-      - ./data/db/0:/data/db
-      - ./config:/etc/mongo
-  db-repl1:
-    <<: *db
-    volumes:
-      - ./data/db/1:/data/db
-      - ./config:/etc/mongo
-  db-repl2:
-    <<: *db
-    volumes:
-      - ./data/db/2:/data/db
+      - ./data/db:/data
       - ./config:/etc/mongo
   testdb:
     image: mongo:latest
