@@ -6,6 +6,8 @@ require (
 	github.com/golang/protobuf v1.3.2
 	github.com/golang/snappy v0.0.1 // indirect
 	github.com/magiconair/properties v1.8.1 // indirect
+	github.com/nats-io/nats-server/v2 v2.1.0 // indirect
+	github.com/nats-io/nats.go v1.8.1
 	github.com/onsi/ginkgo v1.10.2
 	github.com/onsi/gomega v1.7.0
 	github.com/pelletier/go-toml v1.5.0 // indirect

@@ -2,6 +2,9 @@ db:
   URI: mongodb://real:real@db/
   name: real
   timeout: 10s
+broker:
+  URI:
+    - nats://broker:4222
 server:
   type: 'tcp'
   addr: ':50505'

@@ -6,6 +6,7 @@ import (
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/hiroaki-yamamoto/real/backend/config"
 	"github.com/hiroaki-yamamoto/real/backend/rpc"
+	"github.com/nats-io/nats.go"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -15,6 +16,7 @@ import (
 type Server struct {
 	Setting  *config.Config
 	Database *mongo.Database
+	Broker   *nats.Conn
 }
 
 // Subscribe handles subscribtions from users
