@@ -3,7 +3,7 @@ version: "3"
 services:
   broker:
     image: nats
-  db: &db
+  db:
     image: mongo:latest
     restart: unless-stopped
     environment:
