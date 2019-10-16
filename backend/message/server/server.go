@@ -34,13 +34,6 @@ func (me *Server) Subscribe(
 	if err != nil {
 		return
 	}
-	chstream, err := col.Watch(
-		stream.Context(),
-		bson.A{bson.M{"$match": query}},
-	)
-	if err != nil {
-		return
-	}
 
 	decode := func(cur interface {
 		Next(context.Context) bool
@@ -67,7 +60,22 @@ func (me *Server) Subscribe(
 		}
 	}
 	decode(findCur)
-	decode(chstream)
-	defer chstream.Close(stream.Context())
-	return
+	chSub, err := me.Broker.SubscribeSync("messages")
+	if err != nil {
+		return
+	}
+	for {
+		err := func() (err error) {
+			ctx, cancel := me.Setting.Broker.TimeoutContext(stream.Context())
+			defer cancel()
+			msg, err := chSub.NextMsgWithContext(ctx) // Oops! needs serializer...
+		}()
+		if err != nil {
+			return err
+		}
+		select {
+		case <-stream.Context().Done():
+			return
+		}
+	}
 }
