@@ -7,6 +7,7 @@ import (
 	"github.com/hiroaki-yamamoto/real/backend/config"
 	"github.com/hiroaki-yamamoto/real/backend/rpc"
 	"github.com/nats-io/nats.go"
+	"github.com/vmihailenco/msgpack/v4"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -65,13 +66,26 @@ func (me *Server) Subscribe(
 		return
 	}
 	for {
-		err := func() (err error) {
+		err = func() (err error) {
 			ctx, cancel := me.Setting.Broker.TimeoutContext(stream.Context())
 			defer cancel()
 			msg, err := chSub.NextMsgWithContext(ctx) // Oops! needs serializer...
+			var model Model
+			if err = msgpack.Unmarshal(msg.Data, &model); err != nil {
+				return
+			}
+			stream.Send(&rpc.Message{
+				Id:         model.ID.String(),
+				SenderName: model.SenderName,
+				PostTime: &timestamp.Timestamp{
+					Seconds: model.PostTime.Unix(),
+					Nanos:   int32(model.PostTime.Nanosecond()),
+				},
+			})
+			return
 		}()
 		if err != nil {
-			return err
+			return
 		}
 		select {
 		case <-stream.Context().Done():
