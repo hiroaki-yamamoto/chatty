@@ -70,18 +70,11 @@ func (me *Server) Subscribe(
 			ctx, cancel := me.Setting.Broker.TimeoutContext(stream.Context())
 			defer cancel()
 			msg, err := chSub.NextMsgWithContext(ctx) // Oops! needs serializer...
-			var model Model
+			var model rpc.Message
 			if err = msgpack.Unmarshal(msg.Data, &model); err != nil {
 				return
 			}
-			stream.Send(&rpc.Message{
-				Id:         model.ID.String(),
-				SenderName: model.SenderName,
-				PostTime: &timestamp.Timestamp{
-					Seconds: model.PostTime.Unix(),
-					Nanos:   int32(model.PostTime.Nanosecond()),
-				},
-			})
+			stream.Send(&model)
 			return
 		}()
 		if err != nil {
