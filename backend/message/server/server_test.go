@@ -25,8 +25,6 @@ var _ = Describe("Message Server", func() {
 	BeforeEach(func() {
 		models = make([]*rpc.Message, 40)
 		topicID = pr.NewObjectID()
-		ctx, cancel := cfg.Db.TimeoutContext(context.Background())
-		defer cancel()
 		cols := make(bson.A, cap(models))
 		initPostDate := time.Now().UTC().Add(
 			-time.Duration(cap(models)) * time.Hour,
@@ -55,6 +53,8 @@ var _ = Describe("Message Server", func() {
 				Message: model.Message,
 			}
 		}
+		ctx, cancel := cfg.Db.TimeoutContext(context.Background())
+		defer cancel()
 		_, err := db.Collection("messages").InsertMany(ctx, cols)
 		Expect(err).Should(BeNil())
 	})
@@ -71,13 +71,11 @@ var _ = Describe("Message Server", func() {
 			var actual []*rpc.Message
 			defer stop()
 			subCli, err := cli.Subscribe(ctx, &rpc.MessageRequest{
-				TopicId:   topicID.Hex(),
-				StartFrom: 1,
+				TopicId: topicID.Hex(),
 			})
 			Expect(err).Should(BeNil())
 			for {
 				msg, err := subCli.Recv()
-				actual = append(actual, msg)
 				if err == io.EOF {
 					break
 				}

@@ -9,6 +9,7 @@ import (
 	"github.com/nats-io/nats.go"
 	"github.com/vmihailenco/msgpack/v4"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -25,12 +26,22 @@ func (me *Server) Subscribe(
 	req *rpc.MessageRequest, stream rpc.MessageService_SubscribeServer,
 ) (err error) {
 	start := int64(req.StartFrom)
+	topicID, err := primitive.ObjectIDFromHex(req.TopicId)
+	if err != nil {
+		return
+	}
 	col := me.Database.Collection("messages")
 	findCtx, cancelFind := me.Setting.Db.TimeoutContext(stream.Context())
 	defer cancelFind()
-	query := bson.M{"topicId": req.TopicId}
+	query := bson.M{"topicid": topicID}
 	findCur, err := col.Find(
-		findCtx, query, &options.FindOptions{Skip: &start},
+		findCtx, query,
+		&options.FindOptions{
+			Skip: &start,
+			Sort: bson.M{
+				"posttime": 1,
+			},
+		},
 	)
 	if err != nil {
 		return
@@ -48,12 +59,14 @@ func (me *Server) Subscribe(
 				return
 			}
 			err = stream.Send(&rpc.Message{
-				Id:         model.ID.String(),
+				Id:         model.ID.Hex(),
 				SenderName: model.SenderName,
 				PostTime: &timestamp.Timestamp{
 					Seconds: model.PostTime.Unix(),
 					Nanos:   int32(model.PostTime.Nanosecond()),
 				},
+				Message: model.Message,
+				Profile: model.Profile,
 			})
 			if err != nil {
 				return
@@ -67,9 +80,10 @@ func (me *Server) Subscribe(
 	}
 	for {
 		err = func() (err error) {
-			ctx, cancel := me.Setting.Broker.TimeoutContext(stream.Context())
-			defer cancel()
-			msg, err := chSub.NextMsgWithContext(ctx) // Oops! needs serializer...
+			msg, err := chSub.NextMsgWithContext(stream.Context())
+			if err != nil {
+				return
+			}
 			var model rpc.Message
 			if err = msgpack.Unmarshal(msg.Data, &model); err != nil {
 				return
@@ -77,11 +91,12 @@ func (me *Server) Subscribe(
 			stream.Send(&model)
 			return
 		}()
-		if err != nil {
-			return
-		}
 		select {
 		case <-stream.Context().Done():
+			return
+		default:
+		}
+		if err != nil {
 			return
 		}
 	}

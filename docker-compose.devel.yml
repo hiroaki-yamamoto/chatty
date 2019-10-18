@@ -12,6 +12,8 @@ services:
     volumes:
       - ./data/db:/data
       - ./config:/etc/mongo
+  testbroker:
+    image: nats
   testdb:
     image: mongo:latest
     restart: unless-stopped

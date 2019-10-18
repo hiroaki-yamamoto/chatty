@@ -30,13 +30,15 @@ var svr *grpc.Server
 
 var _ = BeforeSuite(func() {
 	cfg = svrutils.LoadCfg()
-	cfg.Db.URI = "mongodb://real:real@testdb"
+	cfg.Db.URI = "mongodb://real:real@testdb/"
+	cfg.Broker.URI = []string{"nats://testbroker:4222"}
 	cfg.Server.Type = "unix"
 	cfg.Server.Addr = "/tmp/" + PKGNAME + ".sock"
 	db = svrutils.ConnectDB(cfg).Database(cfg.Db.Name)
 	svr, lis = svrutils.Construct(cfg)
+	broker := svrutils.InitBroker(cfg)
 	rpc.RegisterMessageServiceServer(
-		svr, &server.Server{Setting: cfg, Database: db},
+		svr, &server.Server{Setting: cfg, Database: db, Broker: broker},
 	)
 
 	go func() {
