@@ -23,7 +23,7 @@ var _ = Describe("Message Server", func() {
 	var models []*rpc.Message
 	var topicID pr.ObjectID
 	BeforeEach(func() {
-		models = make([]*rpc.Message, 40)
+		models = make([]*rpc.Message, 48)
 		topicID = pr.NewObjectID()
 		cols := make(bson.A, cap(models))
 		initPostDate := time.Now().UTC().Add(
@@ -47,7 +47,7 @@ var _ = Describe("Message Server", func() {
 				SenderName: model.SenderName,
 				PostTime: &timestamp.Timestamp{
 					Seconds: model.PostTime.Unix(),
-					Nanos:   int32(model.PostTime.Nanosecond()),
+					Nanos:   int32((model.PostTime.Nanosecond() / 1000000) * 1000000),
 				},
 				Profile: model.Profile,
 				Message: model.Message,
@@ -68,22 +68,19 @@ var _ = Describe("Message Server", func() {
 	Describe("Subscription", func() {
 		It("Reads the collection and return the docs initially", func() {
 			ctx, stop := context.WithTimeout(context.Background(), 5*time.Second)
-			var actual []*rpc.Message
+			actual := make([]*rpc.Message, cap(models))
 			defer stop()
 			subCli, err := cli.Subscribe(ctx, &rpc.MessageRequest{
 				TopicId: topicID.Hex(),
 			})
 			Expect(err).Should(BeNil())
-			for {
+			for i := 0; i < cap(actual); i++ {
 				msg, err := subCli.Recv()
 				if err == io.EOF {
 					break
 				}
 				Expect(err).Should(BeNil())
-				actual = append(actual, msg)
-				if len(actual) >= len(models) {
-					break
-				}
+				actual[i] = msg
 			}
 			Expect(actual).Should(Equal(models))
 		})
