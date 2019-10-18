@@ -1,8 +1,6 @@
 package server
 
 import (
-	"context"
-
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/hiroaki-yamamoto/real/backend/config"
 	"github.com/hiroaki-yamamoto/real/backend/rpc"
@@ -47,33 +45,27 @@ func (me *Server) Subscribe(
 		return
 	}
 
-	decode := func(cur interface {
-		Next(context.Context) bool
-		Decode(interface{}) error
-	}) {
-		for nxtCtx, stopNxt := me.Setting.Db.TimeoutContext(
-			stream.Context(),
-		); cur.Next(nxtCtx); stopNxt() {
-			var model Model
-			if err = cur.Decode(&model); err != nil {
-				return
-			}
-			err = stream.Send(&rpc.Message{
-				Id:         model.ID.Hex(),
-				SenderName: model.SenderName,
-				PostTime: &timestamp.Timestamp{
-					Seconds: model.PostTime.Unix(),
-					Nanos:   int32(model.PostTime.Nanosecond()),
-				},
-				Message: model.Message,
-				Profile: model.Profile,
-			})
-			if err != nil {
-				return
-			}
+	for nxtCtx, stopNxt := me.Setting.Db.TimeoutContext(
+		stream.Context(),
+	); findCur.Next(nxtCtx); stopNxt() {
+		var model Model
+		if err = findCur.Decode(&model); err != nil {
+			return
+		}
+		err = stream.Send(&rpc.Message{
+			Id:         model.ID.Hex(),
+			SenderName: model.SenderName,
+			PostTime: &timestamp.Timestamp{
+				Seconds: model.PostTime.Unix(),
+				Nanos:   int32(model.PostTime.Nanosecond()),
+			},
+			Message: model.Message,
+			Profile: model.Profile,
+		})
+		if err != nil {
+			return
 		}
 	}
-	decode(findCur)
 	chSub, err := me.Broker.SubscribeSync("messages")
 	if err != nil {
 		return
