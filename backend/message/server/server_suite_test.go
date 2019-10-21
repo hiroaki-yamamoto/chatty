@@ -8,6 +8,7 @@ import (
 	"github.com/hiroaki-yamamoto/real/backend/message/server"
 	"github.com/hiroaki-yamamoto/real/backend/rpc"
 	"github.com/hiroaki-yamamoto/real/backend/svrutils"
+	"github.com/nats-io/nats.go"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -23,6 +24,7 @@ const PKGNAME = "message"
 
 var db *mongo.Database
 var cli rpc.MessageServiceClient
+var broker *nats.Conn
 var clicon *grpc.ClientConn
 var cfg *config.Config
 var lis net.Listener
@@ -36,7 +38,7 @@ var _ = BeforeSuite(func() {
 	cfg.Server.Addr = "/tmp/" + PKGNAME + ".sock"
 	db = svrutils.ConnectDB(cfg).Database(cfg.Db.Name)
 	svr, lis = svrutils.Construct(cfg)
-	broker := svrutils.InitBroker(cfg)
+	broker = svrutils.InitBroker(cfg)
 	rpc.RegisterMessageServiceServer(
 		svr, &server.Server{Setting: cfg, Database: db, Broker: broker},
 	)
