@@ -66,7 +66,7 @@ func (me *Server) Subscribe(
 			return
 		}
 	}
-	chSub, err := me.Broker.SubscribeSync("messages")
+	chSub, err := me.Broker.SubscribeSync("messages/" + req.TopicId)
 	if err != nil {
 		return
 	}
