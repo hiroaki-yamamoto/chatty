@@ -67,6 +67,7 @@ func (me *Server) Subscribe(
 		}
 	}
 	chSub, err := me.Broker.SubscribeSync("messages/" + req.TopicId)
+	defer chSub.Unsubscribe()
 	if err != nil {
 		return
 	}
