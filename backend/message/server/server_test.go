@@ -66,7 +66,7 @@ var _ = Describe("Message Server", func() {
 				ctx, cancel := cfg.Db.TimeoutContext(context.Background())
 				defer cancel()
 				_, err := db.Collection("messages").InsertMany(ctx, cols)
-				Expect(err).Should(BeNil())
+				Expect(err).Should(Succeed())
 			})
 			AfterEach(func() {
 				models = nil
@@ -78,13 +78,13 @@ var _ = Describe("Message Server", func() {
 				subCli, err := cli.Subscribe(ctx, &rpc.MessageRequest{
 					TopicId: topicID.Hex(),
 				})
-				Expect(err).Should(BeNil())
+				Expect(err).Should(Succeed())
 				for i := 0; i < cap(actual); i++ {
 					msg, err := subCli.Recv()
 					if err == io.EOF {
 						break
 					}
-					Expect(err).Should(BeNil())
+					Expect(err).Should(Succeed())
 					actual[i] = msg
 				}
 				Expect(actual).Should(Equal(models))
@@ -96,13 +96,13 @@ var _ = Describe("Message Server", func() {
 				subCli, err := cli.Subscribe(ctx, &rpc.MessageRequest{
 					TopicId: topicID.Hex(),
 				})
-				Expect(err).Should(BeNil())
+				Expect(err).Should(Succeed())
 				for i := 0; i < cap(actual); i++ {
 					msg, err := subCli.Recv()
 					if err == io.EOF {
 						break
 					}
-					Expect(err).Should(BeNil())
+					Expect(err).Should(Succeed())
 					actual[i] = msg
 				}
 				Expect(actual).Should(Equal(models))
@@ -120,18 +120,18 @@ var _ = Describe("Message Server", func() {
 					Message: "This is an example post from testman.",
 				}
 				data, err := msgpack.Marshal(msgToStream)
-				Expect(err).Should(BeNil())
-				go func() {
-					broker.Publish("messages/"+topicID.Hex(), data)
-				}()
+				Expect(err).Should(Succeed())
+				Expect(
+					broker.Publish("messages/"+topicID.Hex(), data),
+				).Should(Succeed())
 				msg, err := subCli.Recv()
-				Expect(err).Should(BeNil())
+				Expect(err).Should(Succeed())
 				Expect(msg).Should(Equal(msgToStream))
 			})
 		})
 		Context("Without any initial messages", func() {
 			It("Recives the message when it's posted.", func() {
-				additionalPostTime := time.Now().UTC().Add(-240 * time.Hour)
+				additionalPostTime := time.Now().UTC()
 				msgToStream := &rpc.Message{
 					Id:         pr.NewObjectID().Hex(),
 					SenderName: "Test Man",
@@ -145,19 +145,19 @@ var _ = Describe("Message Server", func() {
 					Message: "This is an example post from testman.",
 				}
 				data, err := msgpack.Marshal(msgToStream)
-				Expect(err).Should(BeNil())
+				Expect(err).Should(Succeed())
 
 				ctx, stop := context.WithTimeout(context.Background(), 5*time.Second)
 				defer stop()
 				subCli, err := cli.Subscribe(ctx, &rpc.MessageRequest{
 					TopicId: topicID.Hex(),
 				})
-				Expect(err).Should(BeNil())
-				go func() {
-					broker.Publish("messages/"+topicID.Hex(), data)
-				}()
+				Expect(err).Should(Succeed())
+				Expect(
+					broker.Publish("messages/"+topicID.Hex(), data),
+				).Should(Succeed())
 				msg, err := subCli.Recv()
-				Expect(err).Should(BeNil())
+				Expect(err).Should(Succeed())
 				Expect(msg).Should(Equal(msgToStream))
 			})
 		})

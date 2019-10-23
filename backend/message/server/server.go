@@ -83,13 +83,13 @@ func (me *Server) Subscribe(
 			stream.Send(&model)
 			return
 		}()
+		if err != nil {
+			return
+		}
 		select {
 		case <-stream.Context().Done():
 			return
 		default:
-		}
-		if err != nil {
-			return
 		}
 	}
 }
