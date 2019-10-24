@@ -66,31 +66,24 @@ func (me *Server) Subscribe(
 			return
 		}
 	}
-	chSub, err := me.Broker.SubscribeSync("messages/" + req.TopicId)
+	msgCh := make(chan *nats.Msg)
+	chSub, err := me.Broker.ChanSubscribe("messages/"+req.TopicId, msgCh)
 	defer chSub.Unsubscribe()
+	defer close(msgCh)
 	if err != nil {
 		return
 	}
 	for {
-		err = func() (err error) {
-			msg, err := chSub.NextMsgWithContext(stream.Context())
-			if err != nil {
-				return
-			}
+		select {
+		case msg := <-msgCh:
 			var model rpc.Message
 			if err = msgpack.Unmarshal(msg.Data, &model); err != nil {
 				return
 			}
 			stream.Send(&model)
-			return
-		}()
-		if err != nil {
-			return
-		}
-		select {
+			break
 		case <-stream.Context().Done():
 			return
-		default:
 		}
 	}
 }
