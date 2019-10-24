@@ -67,12 +67,12 @@ func (me *Server) Subscribe(
 		}
 	}
 	msgCh := make(chan *nats.Msg)
-	chSub, err := me.Broker.ChanSubscribe("messages/"+req.TopicId, msgCh)
-	defer chSub.Unsubscribe()
 	defer close(msgCh)
+	chSub, err := me.Broker.ChanSubscribe("messages/"+req.TopicId, msgCh)
 	if err != nil {
 		return
 	}
+	defer chSub.Unsubscribe()
 	for {
 		select {
 		case msg := <-msgCh:
