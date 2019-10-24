@@ -72,4 +72,5 @@ var _ = AfterSuite(func() {
 		lis.Close()
 	}
 	svrutils.DisconnectDB(db.Client(), &cfg.Db)
+	broker.Close()
 })
