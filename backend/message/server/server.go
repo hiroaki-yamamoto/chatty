@@ -29,11 +29,9 @@ func (me *Server) Subscribe(
 		return
 	}
 	col := me.Database.Collection("messages")
-	findCtx, cancelFind := me.Setting.Db.TimeoutContext(stream.Context())
-	defer cancelFind()
 	query := bson.M{"topicid": topicID}
 	findCur, err := col.Find(
-		findCtx, query,
+		stream.Context(), query,
 		&options.FindOptions{
 			Skip: &start,
 			Sort: bson.M{
@@ -45,9 +43,7 @@ func (me *Server) Subscribe(
 		return
 	}
 
-	for nxtCtx, stopNxt := me.Setting.Db.TimeoutContext(
-		stream.Context(),
-	); findCur.Next(nxtCtx); stopNxt() {
+	for findCur.Next(stream.Context()) {
 		var model Model
 		if err = findCur.Decode(&model); err != nil {
 			return
