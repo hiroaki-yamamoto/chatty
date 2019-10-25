@@ -24,7 +24,6 @@ func (me *Server) Subscribe(
 	req *rpc.MessageRequest, stream rpc.MessageService_SubscribeServer,
 ) (err error) {
 	start := int64(req.StartFrom)
-
 	topicID, err := primitive.ObjectIDFromHex(req.TopicId)
 	if err != nil {
 		return
@@ -72,6 +71,7 @@ func (me *Server) Subscribe(
 		return
 	}
 	defer chSub.Unsubscribe()
+	me.Broker.Publish("ready", nil)
 	for {
 		select {
 		case msg := <-msgCh:

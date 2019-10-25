@@ -4,9 +4,11 @@ import (
 	"context"
 	"io"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/golang/protobuf/ptypes/timestamp"
+	"github.com/nats-io/nats.go"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/vmihailenco/msgpack/v4"
@@ -22,13 +24,26 @@ const randomCharMap = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234
 
 var _ = Describe("Message Server", func() {
 	var topicID pr.ObjectID
+	var ready sync.WaitGroup
 	BeforeEach(func() {
+		ready.Add(1)
 		topicID = pr.NewObjectID()
+		readyCh := make(chan *nats.Msg)
+		sub, err := broker.ChanSubscribe("ready", readyCh)
+		Expect(err).Should(Succeed())
+		go func() {
+			select {
+			case <-readyCh:
+				sub.Unsubscribe()
+				ready.Done()
+			}
+			close(readyCh)
+		}()
 	})
 	AfterEach(func() {
 		ctx, cancel := cfg.Db.TimeoutContext(context.Background())
 		defer cancel()
-		db.Collection("messages").Drop(ctx)
+		Expect(db.Collection("messages").Drop(ctx)).Should(Succeed())
 	})
 	Describe("Subscription", func() {
 		var models []*rpc.Message
@@ -93,6 +108,7 @@ var _ = Describe("Message Server", func() {
 				ctx, stop := context.WithTimeout(context.Background(), 5*time.Second)
 				defer stop()
 				actual := make([]*rpc.Message, cap(models))
+
 				subCli, err := cli.Subscribe(ctx, &rpc.MessageRequest{
 					TopicId: topicID.Hex(),
 				})
@@ -121,13 +137,15 @@ var _ = Describe("Message Server", func() {
 				}
 				data, err := msgpack.Marshal(msgToStream)
 				Expect(err).Should(Succeed())
+
+				ready.Wait()
 				Expect(
 					broker.Publish("messages/"+topicID.Hex(), data),
 				).Should(Succeed())
 				msg, err := subCli.Recv()
 				Expect(err).Should(Succeed())
 				Expect(msg).Should(Equal(msgToStream))
-			})
+			}, 8)
 		})
 		Context("Without any initial messages", func() {
 			It("Recives the message when it's posted.", func() {
@@ -153,13 +171,15 @@ var _ = Describe("Message Server", func() {
 					TopicId: topicID.Hex(),
 				})
 				Expect(err).Should(Succeed())
+
+				ready.Wait()
 				Expect(
 					broker.Publish("messages/"+topicID.Hex(), data),
 				).Should(Succeed())
 				msg, err := subCli.Recv()
 				Expect(err).Should(Succeed())
 				Expect(msg).Should(Equal(msgToStream))
-			})
+			}, 8)
 		})
 	})
 })
