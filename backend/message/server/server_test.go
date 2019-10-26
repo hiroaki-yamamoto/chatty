@@ -32,11 +32,9 @@ var _ = Describe("Message Server", func() {
 		sub, err := broker.ChanSubscribe("ready", readyCh)
 		Expect(err).Should(Succeed())
 		go func() {
-			select {
-			case <-readyCh:
-				sub.Unsubscribe()
-				ready.Done()
-			}
+			<-readyCh
+			sub.Unsubscribe()
+			ready.Done()
 			close(readyCh)
 		}()
 	})
@@ -47,6 +45,52 @@ var _ = Describe("Message Server", func() {
 	})
 	Describe("Subscription", func() {
 		var models []*rpc.Message
+		checkPostMsg := func(subCli rpc.MessageService_SubscribeClient) {
+			additionalPostTime := time.Now().UTC().Add(-240 * time.Hour)
+			msgToStream := &rpc.Message{
+				Id:         pr.NewObjectID().Hex(),
+				SenderName: "Test Man",
+				PostTime: &timestamp.Timestamp{
+					Seconds: additionalPostTime.Unix(),
+					Nanos: int32(
+						(additionalPostTime.Nanosecond() / 1000000) * 1000000,
+					),
+				},
+				Profile: "https://google.com",
+				Message: "This is an example post from testman.",
+			}
+			data, err := msgpack.Marshal(msgToStream)
+			Expect(err).Should(Succeed())
+
+			ready.Wait()
+			Expect(
+				broker.Publish("messages/"+topicID.Hex(), data),
+			).Should(Succeed())
+			msg, err := subCli.Recv()
+			Expect(err).Should(Succeed())
+			Expect(msg).Should(Equal(msgToStream))
+		}
+		checkInitMsg := func() (
+			rpc.MessageService_SubscribeClient,
+			context.CancelFunc,
+		) {
+			ctx, stop := context.WithTimeout(context.Background(), 5*time.Second)
+			actual := make([]*rpc.Message, cap(models))
+			subCli, err := cli.Subscribe(ctx, &rpc.MessageRequest{
+				TopicId: topicID.Hex(),
+			})
+			Expect(err).Should(Succeed())
+			for i := 0; i < cap(actual); i++ {
+				msg, err := subCli.Recv()
+				if err == io.EOF {
+					break
+				}
+				Expect(err).Should(Succeed())
+				actual[i] = msg
+			}
+			Expect(actual).Should(Equal(models))
+			return subCli, stop
+		}
 		Context("With initial messages", func() {
 			BeforeEach(func() {
 				models = make([]*rpc.Message, 48)
@@ -87,84 +131,17 @@ var _ = Describe("Message Server", func() {
 				models = nil
 			})
 			It("Reads the collection and return the docs initially", func() {
-				ctx, stop := context.WithTimeout(context.Background(), 5*time.Second)
+				_, stop := checkInitMsg()
 				defer stop()
-				actual := make([]*rpc.Message, cap(models))
-				subCli, err := cli.Subscribe(ctx, &rpc.MessageRequest{
-					TopicId: topicID.Hex(),
-				})
-				Expect(err).Should(Succeed())
-				for i := 0; i < cap(actual); i++ {
-					msg, err := subCli.Recv()
-					if err == io.EOF {
-						break
-					}
-					Expect(err).Should(Succeed())
-					actual[i] = msg
-				}
-				Expect(actual).Should(Equal(models))
 			})
 			It("Recives the message when it's posted.", func() {
-				ctx, stop := context.WithTimeout(context.Background(), 5*time.Second)
+				subCli, stop := checkInitMsg()
 				defer stop()
-				actual := make([]*rpc.Message, cap(models))
-
-				subCli, err := cli.Subscribe(ctx, &rpc.MessageRequest{
-					TopicId: topicID.Hex(),
-				})
-				Expect(err).Should(Succeed())
-				for i := 0; i < cap(actual); i++ {
-					msg, err := subCli.Recv()
-					if err == io.EOF {
-						break
-					}
-					Expect(err).Should(Succeed())
-					actual[i] = msg
-				}
-				Expect(actual).Should(Equal(models))
-				additionalPostTime := time.Now().UTC().Add(-240 * time.Hour)
-				msgToStream := &rpc.Message{
-					Id:         pr.NewObjectID().Hex(),
-					SenderName: "Test Man",
-					PostTime: &timestamp.Timestamp{
-						Seconds: additionalPostTime.Unix(),
-						Nanos: int32(
-							(additionalPostTime.Nanosecond() / 1000000) * 1000000,
-						),
-					},
-					Profile: "https://google.com",
-					Message: "This is an example post from testman.",
-				}
-				data, err := msgpack.Marshal(msgToStream)
-				Expect(err).Should(Succeed())
-
-				ready.Wait()
-				Expect(
-					broker.Publish("messages/"+topicID.Hex(), data),
-				).Should(Succeed())
-				msg, err := subCli.Recv()
-				Expect(err).Should(Succeed())
-				Expect(msg).Should(Equal(msgToStream))
+				checkPostMsg(subCli)
 			}, 8)
 		})
 		Context("Without any initial messages", func() {
 			It("Recives the message when it's posted.", func() {
-				additionalPostTime := time.Now().UTC()
-				msgToStream := &rpc.Message{
-					Id:         pr.NewObjectID().Hex(),
-					SenderName: "Test Man",
-					PostTime: &timestamp.Timestamp{
-						Seconds: additionalPostTime.Unix(),
-						Nanos: int32(
-							(additionalPostTime.Nanosecond() / 1000000) * 1000000,
-						),
-					},
-					Profile: "https://google.com",
-					Message: "This is an example post from testman.",
-				}
-				data, err := msgpack.Marshal(msgToStream)
-				Expect(err).Should(Succeed())
-
 				ctx, stop := context.WithTimeout(context.Background(), 5*time.Second)
 				defer stop()
 				subCli, err := cli.Subscribe(ctx, &rpc.MessageRequest{
@@ -172,13 +149,7 @@ var _ = Describe("Message Server", func() {
 				})
 				Expect(err).Should(Succeed())
 
-				ready.Wait()
-				Expect(
-					broker.Publish("messages/"+topicID.Hex(), data),
-				).Should(Succeed())
-				msg, err := subCli.Recv()
-				Expect(err).Should(Succeed())
-				Expect(msg).Should(Equal(msgToStream))
+				checkPostMsg(subCli)
 			}, 8)
 		})
 	})
