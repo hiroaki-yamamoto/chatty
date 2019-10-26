@@ -17,7 +17,7 @@ require (
 	github.com/spf13/viper v1.4.0
 	github.com/stretchr/testify v1.4.0 // indirect
 	github.com/tidwall/pretty v1.0.0 // indirect
-	github.com/vmihailenco/msgpack v4.0.4+incompatible
+	github.com/vmihailenco/msgpack v4.2.1+incompatible
 	github.com/vmihailenco/msgpack/v4 v4.2.1
 	github.com/xdg/scram v0.0.0-20180814205039-7eeb5667e42c // indirect
 	github.com/xdg/stringprep v1.0.0 // indirect
