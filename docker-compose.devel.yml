@@ -43,13 +43,11 @@ services:
         PKGNAME: message
     stop_signal: SIGINT
     restart: unless-stopped
-    ports:
-      - 50500:50505
     volumes:
       - ./backend:/opt/code
       - ./config:/etc/real
     depends_on:
-      - testdb
+      - db
       - broker
     environment:
       CONFIG_NAME: devel
@@ -70,3 +68,11 @@ services:
         CONFIG_NAME: devel
     entrypoint:
       - "./test.sh"
+  envoy:
+    image: envoyproxy/envoy-alpine
+    volumes:
+      - ./config:/etc/envoy
+    ports:
+      - 50000:50000
+    depends_on:
+      - message

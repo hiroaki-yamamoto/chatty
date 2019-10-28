@@ -1,0 +1,28 @@
+listeners:
+  - name: backend
+    address:
+      socket_address: {address: 0.0.0.0, port_value: 50000}
+    filter_chains:
+      - name: envoy.http_connection_manager
+        config:
+          codec_type: auto
+          stat_prefix: ingress_http
+          route_config:
+            name: backend
+            virtual_hosts:
+            - name: message
+              domains: ["*"]
+              routes:
+              - match: { prefix: "/message" }
+                route: { cluster: message }
+          http_filters:
+          - name: envoy.grpc_web
+          - name: envoy.router
+clusters:
+  - name: message
+    connect_timeout: 1s
+    type: logical_dns
+    http2_protocol_options: {}
+    lb_policy: round_robin
+    hosts:
+      - socket_address: { address: message, port_value: 50505 }
