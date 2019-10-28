@@ -24,19 +24,8 @@ const randomCharMap = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234
 
 var _ = Describe("Message Server", func() {
 	var topicID pr.ObjectID
-	var ready sync.WaitGroup
 	BeforeEach(func() {
-		ready.Add(1)
 		topicID = pr.NewObjectID()
-		readyCh := make(chan *nats.Msg)
-		sub, err := broker.ChanSubscribe("ready", readyCh)
-		Expect(err).Should(Succeed())
-		go func() {
-			<-readyCh
-			sub.Unsubscribe()
-			ready.Done()
-			close(readyCh)
-		}()
 	})
 	AfterEach(func() {
 		ctx, cancel := cfg.Db.TimeoutContext(context.Background())
@@ -45,6 +34,22 @@ var _ = Describe("Message Server", func() {
 	})
 	Describe("Subscription", func() {
 		var models []*rpc.Message
+		var ready sync.WaitGroup
+		BeforeEach(func() {
+			ready.Add(1)
+			readyCh := make(chan *nats.Msg)
+			sub, err := broker.ChanSubscribe("status/messages/subscribe", readyCh)
+			Expect(err).Should(Succeed())
+			go func() {
+				defer close(readyCh)
+				status := <-readyCh
+				switch string(status.Data) {
+				case "ready":
+					sub.Unsubscribe()
+					ready.Done()
+				}
+			}()
+		})
 		checkPostMsg := func(subCli rpc.MessageService_SubscribeClient) {
 			additionalPostTime := time.Now().UTC().Add(-240 * time.Hour)
 			msgToStream := &rpc.Message{

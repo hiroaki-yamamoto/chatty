@@ -71,7 +71,7 @@ func (me *Server) Subscribe(
 		return
 	}
 	defer chSub.Unsubscribe()
-	me.Broker.Publish("ready", nil)
+	go me.Broker.Publish("status/messages/subscribe", []byte("ready"))
 	for {
 		select {
 		case msg := <-msgCh:
