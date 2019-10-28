@@ -86,3 +86,8 @@ func (me *Server) Subscribe(
 		}
 	}
 }
+
+// Post recirds the message, broadcast it, and returns Status structure
+func (me *Server) Post(req *rpc.PostRequest) (*rpc.Status, error) {
+
+}

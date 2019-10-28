@@ -1,6 +1,7 @@
 import * as jspb from "google-protobuf"
 
 import * as google_protobuf_timestamp_pb from 'google-protobuf/google/protobuf/timestamp_pb';
+import * as status_pb from './status_pb';
 
 export class Message extends jspb.Message {
   getId(): string;
@@ -57,6 +58,40 @@ export namespace MessageRequest {
   export type AsObject = {
     topicid: string,
     startfrom: number,
+  }
+}
+
+export class PostRequest extends jspb.Message {
+  getTopicid(): string;
+  setTopicid(value: string): void;
+
+  getName(): string;
+  setName(value: string): void;
+
+  getNodump(): boolean;
+  setNodump(value: boolean): void;
+
+  getMessage(): string;
+  setMessage(value: string): void;
+
+  getRecaptcha(): string;
+  setRecaptcha(value: string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): PostRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: PostRequest): PostRequest.AsObject;
+  static serializeBinaryToWriter(message: PostRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): PostRequest;
+  static deserializeBinaryFromReader(message: PostRequest, reader: jspb.BinaryReader): PostRequest;
+}
+
+export namespace PostRequest {
+  export type AsObject = {
+    topicid: string,
+    name: string,
+    nodump: boolean,
+    message: string,
+    recaptcha: string,
   }
 }
 

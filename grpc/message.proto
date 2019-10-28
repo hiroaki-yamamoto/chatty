@@ -3,6 +3,7 @@ syntax = "proto3";
 option go_package="rpc";
 
 import "google/protobuf/timestamp.proto";
+import "status.proto";
 
 message Message {
   string id = 1;
@@ -17,6 +18,15 @@ message MessageRequest {
   uint32 startFrom = 2;
 }
 
+message PostRequest {
+  string topicId = 1;
+  string name = 2;
+  bool noDump = 3;
+  string message = 4;
+  string recaptcha = 5;
+}
+
 service MessageService {
   rpc Subscribe (MessageRequest) returns (stream Message);
+  rpc Post (PostRequest) returns (Status);
 }
