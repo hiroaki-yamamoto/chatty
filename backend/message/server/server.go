@@ -1,6 +1,8 @@
 package server
 
 import (
+	"context"
+
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/hiroaki-yamamoto/real/backend/config"
 	"github.com/hiroaki-yamamoto/real/backend/rpc"
@@ -35,9 +37,7 @@ func (me *Server) Subscribe(
 		stream.Context(), query,
 		&options.FindOptions{
 			Skip: &start,
-			Sort: bson.M{
-				"posttime": 1,
-			},
+			Sort: bson.M{"posttime": 1},
 		},
 	)
 	if err != nil {
@@ -88,6 +88,9 @@ func (me *Server) Subscribe(
 }
 
 // Post recirds the message, broadcast it, and returns Status structure
-func (me *Server) Post(req *rpc.PostRequest) (*rpc.Status, error) {
-
+func (me *Server) Post(
+	ctx context.Context,
+	req *rpc.PostRequest,
+) (*rpc.Status, error) {
+	return nil, nil
 }

@@ -1,9 +1,11 @@
 package server
 
 import (
+	"context"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // Model indicates the model of the message.
@@ -15,4 +17,15 @@ type Model struct {
 	Profile    string
 	Message    string
 	Host       string
+}
+
+// Store the model to the collection.
+// WARNING: this doesn't update the model that already exists. The behavior
+//  is only inserting the model.
+func (me *Model) Store(
+	ctx context.Context,
+	col *mongo.Collection,
+) (err error) {
+	_, err = col.InsertOne(ctx, me)
+	return
 }
