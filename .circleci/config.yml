@@ -31,16 +31,33 @@ jobs:
           name: "Test"
           command: go test ./${PKG_NAME}/...
           working_directory: backend
-      - run:
-          name: "build"
-          command: go build -o ../bin/${PKG_NAME}
-          working_directory: backend/${PKG_NAME}
-      - store_artifacts:
-          path: ./bin
-          destination: ${PKG_NAME}
   build:
     docker:
-      - image: scratch
+      - image: golang
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - '{{ .Branch }}-{{ checksum "backend/go.sum" }}'
+      - run:
+          name: "Get Dependencies"
+          command: "go mod download"
+          working_directory: backend
+      - save_cache:
+          key: '{{ .Branch }}-{{ checksum "backend/go.sum" }}'
+          paths:
+            - "/go"
+      # Add Service Build Steps Below
+      - run:
+          name: "Build Message Service"
+          environment:
+            PKG_NAME: message
+          command: go build -o ../bin/${PKG_NAME}
+          working_directory: backend/${PKG_NAME}
+      # Add Service Build Steps Above
+      - store_artifacts:
+          path: ./bin
+          destination: backend
   frontendBuild:
     docker:
       - image: node:latest
@@ -83,10 +100,12 @@ workflows:
   version: 2
   default:
     jobs:
-      # - build:
-      #     filters:
-      #       << : *dev_filter
       - test-message:
+          filters:
+            << : *dev_filter
+      - build:
+          requires:
+            - test-message
           filters:
             << : *dev_filter
       - frontendBuild:
@@ -94,10 +113,12 @@ workflows:
             << : *dev_filter
   version_tag:
     jobs:
-      # - build:
-      #     filters:
-      #       << : *release_filter
       - test-message:
+          filters:
+            << : *release_filter
+      - build:
+          requires:
+            - test-message
           filters:
             << : *release_filter
       - frontendBuild:
