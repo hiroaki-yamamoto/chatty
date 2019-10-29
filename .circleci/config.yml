@@ -61,8 +61,8 @@ jobs:
           name: "Build Message Service"
           environment:
             PKG_NAME: message
-          command: go build -o ../bin/${PKG_NAME}
-          working_directory: backend/${PKG_NAME}
+          command: go build -o ../bin/${PKG_NAME} ./${PKG_NAME}
+          working_directory: backend
       # Add Service Build Steps Above
       - store_artifacts:
           path: ./bin
