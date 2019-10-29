@@ -28,6 +28,11 @@ jobs:
           paths:
             - "/go"
       - run:
+          name: "Copy Configuration File"
+          command: |
+            mkdir -p ${HOME}/etc
+            cp -r config ${HOME}/etc/real
+      - run:
           name: "Test"
           command: go test ./${PKG_NAME}/...
           working_directory: backend
