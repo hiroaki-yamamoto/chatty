@@ -10,12 +10,12 @@ jobs:
           CONFIG_NAME: devel
           PKG_NAME: message
       - image: mongo
-        name: db
+        name: testdb
         environment:
           MONGO_INITDB_ROOT_USERNAME: real
           MONGO_INITDB_ROOT_PASSWORD: real
       - image: nats
-        name: broker
+        name: testbroker
     steps: &service_step
       - checkout
       - restore_cache:
