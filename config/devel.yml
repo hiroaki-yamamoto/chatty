@@ -1,5 +1,3 @@
-timeout: 10s
-
 db:
   URI: mongodb://real:real@db/
   name: real

@@ -7,13 +7,15 @@ jobs:
         environment:
           GO111MODULE: 'on'
           DEVEL: 'true'
-          CONFIG_NAME: ci
+          CONFIG_NAME: devel
           PKG_NAME: message
       - image: mongo
+        name: db
         environment:
           MONGO_INITDB_ROOT_USERNAME: real
           MONGO_INITDB_ROOT_PASSWORD: real
       - image: nats
+        name: broker
     steps: &service_step
       - checkout
       - restore_cache:
@@ -39,6 +41,8 @@ jobs:
   build:
     docker:
       - image: golang
+        environment:
+          GO111MODULE: 'on'
     steps:
       - checkout
       - restore_cache:
