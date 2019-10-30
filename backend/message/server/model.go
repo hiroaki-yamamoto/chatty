@@ -11,12 +11,13 @@ import (
 // Model indicates the model of the message.
 type Model struct {
 	ID         primitive.ObjectID `bson:"_id"`
-	TopicID    primitive.ObjectID
+	TopicID    primitive.ObjectID `validate:"required"`
 	SenderName string
-	PostTime   time.Time
+	PostTime   time.Time `validate:"required"`
 	Profile    string
-	Message    string
-	Host       string
+	Message    string `validate:"required"`
+	Host       string `validate:"required"`
+	Recaptcha  string `bson:"-" validate:"recap"`
 }
 
 // Store the model to the collection.
