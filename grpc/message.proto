@@ -9,7 +9,6 @@ message Message {
   string id = 1;
   string senderName = 2;
   google.protobuf.Timestamp postTime = 3;
-  string profile = 4;
   string message = 5;
 }
 

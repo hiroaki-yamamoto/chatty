@@ -15,9 +15,6 @@ export class Message extends jspb.Message {
   hasPosttime(): boolean;
   clearPosttime(): void;
 
-  getProfile(): string;
-  setProfile(value: string): void;
-
   getMessage(): string;
   setMessage(value: string): void;
 
@@ -34,7 +31,6 @@ export namespace Message {
     id: string,
     sendername: string,
     posttime?: google_protobuf_timestamp_pb.Timestamp.AsObject,
-    profile: string,
     message: string,
   }
 }

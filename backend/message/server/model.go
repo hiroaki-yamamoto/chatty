@@ -14,10 +14,9 @@ type Model struct {
 	TopicID    primitive.ObjectID `validate:"required"`
 	SenderName string
 	PostTime   time.Time `validate:"required"`
-	Profile    string
-	Message    string `validate:"required"`
-	Host       string `validate:"required"`
-	Recaptcha  string `bson:"-" validate:"recap"`
+	Message    string    `validate:"required"`
+	Host       string    `validate:"required"`
+	Recaptcha  string    `bson:"-" validate:"recap"`
 }
 
 // Store the model to the collection.

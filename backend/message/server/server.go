@@ -2,16 +2,21 @@ package server
 
 import (
 	"context"
+	"errors"
+	"net"
+	"time"
 
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/hiroaki-yamamoto/real/backend/config"
 	"github.com/hiroaki-yamamoto/real/backend/rpc"
+	"github.com/hiroaki-yamamoto/real/backend/validation"
 	"github.com/nats-io/nats.go"
 	"github.com/vmihailenco/msgpack/v4"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"google.golang.org/grpc/peer"
 )
 
 // Server implements MessageServiceServer interface.
@@ -19,6 +24,14 @@ type Server struct {
 	Setting  *config.Config
 	Database *mongo.Database
 	Broker   *nats.Conn
+}
+
+func (me *Server) getCollection() *mongo.Collection {
+	return me.Database.Collection("messages")
+}
+
+func (me *Server) getBrokerSubject(topicID string) string {
+	return "messages/" + topicID
 }
 
 // Subscribe handles subscribtions from users
@@ -31,7 +44,7 @@ func (me *Server) Subscribe(
 		return
 	}
 
-	col := me.Database.Collection("messages")
+	col := me.getCollection()
 	query := bson.M{"topicid": topicID}
 	findCur, err := col.Find(
 		stream.Context(), query,
@@ -57,7 +70,6 @@ func (me *Server) Subscribe(
 				Nanos:   int32(model.PostTime.Nanosecond()),
 			},
 			Message: model.Message,
-			Profile: model.Profile,
 		})
 		if err != nil {
 			return
@@ -66,7 +78,9 @@ func (me *Server) Subscribe(
 
 	msgCh := make(chan *nats.Msg)
 	defer close(msgCh)
-	chSub, err := me.Broker.ChanSubscribe("messages/"+req.TopicId, msgCh)
+	chSub, err := me.Broker.ChanSubscribe(
+		me.getBrokerSubject(req.TopicId), msgCh,
+	)
 	if err != nil {
 		return
 	}
@@ -92,5 +106,38 @@ func (me *Server) Post(
 	ctx context.Context,
 	req *rpc.PostRequest,
 ) (status *rpc.Status, err error) {
+	peer, ok := peer.FromContext(ctx)
+	if !ok {
+		err = errors.New("Your IP Address is not contained in the current context")
+		return
+	}
+	remoteIP, _, err := net.SplitHostPort(peer.Addr.String())
+	if err != nil {
+		return
+	}
+	vld, err := validation.New(ctx, me.Setting.Recaptcha)
+	if err != nil {
+		return
+	}
+	topicID, err := primitive.ObjectIDFromHex(req.GetTopicId())
+	if err != nil {
+		return
+	}
+	model := &Model{
+		TopicID:    topicID,
+		SenderName: req.GetName(),
+		PostTime:   time.Now().UTC(),
+		Message:    req.GetMessage(),
+		Host:       remoteIP,
+	}
+	err = vld.Struct(model)
+	if err != nil {
+		return
+	}
+	err = model.Store(ctx, me.getCollection())
+	if err != nil {
+		return
+	}
+	// go me.Broker.Publish(me.getBrokerSubject(), )
 	return
 }

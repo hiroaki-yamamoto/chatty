@@ -15,7 +15,6 @@ import (
 	pr "go.mongodb.org/mongo-driver/bson/primitive"
 
 	. "github.com/hiroaki-yamamoto/real/backend/message/server"
-	"github.com/hiroaki-yamamoto/real/backend/random"
 	"github.com/hiroaki-yamamoto/real/backend/rpc"
 )
 
@@ -59,7 +58,6 @@ var _ = Describe("Message Server", func() {
 						(additionalPostTime.Nanosecond() / 1000000) * 1000000,
 					),
 				},
-				Profile: "https://google.com",
 				Message: "This is an example post from testman.",
 			}
 
@@ -112,7 +110,6 @@ var _ = Describe("Message Server", func() {
 						TopicID:    topicID,
 						SenderName: "Test User " + numStr,
 						PostTime:   initPostDate.Add(time.Duration(i) * time.Hour),
-						Profile:    random.GenerateRandomText(randomCharMap, 16),
 						Message:    "This is a test: " + numStr,
 						Host:       "127.0.0.1",
 					}
@@ -124,7 +121,6 @@ var _ = Describe("Message Server", func() {
 							Seconds: model.PostTime.Unix(),
 							Nanos:   int32((model.PostTime.Nanosecond() / 1000000) * 1000000),
 						},
-						Profile: model.Profile,
 						Message: model.Message,
 					}
 				}
