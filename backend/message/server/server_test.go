@@ -11,7 +11,6 @@ import (
 	"github.com/nats-io/nats.go"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/vmihailenco/msgpack/v4"
 	"go.mongodb.org/mongo-driver/bson"
 	pr "go.mongodb.org/mongo-driver/bson/primitive"
 
@@ -53,7 +52,6 @@ var _ = Describe("Message Server", func() {
 		checkPostMsg := func(subCli rpc.MessageService_SubscribeClient) {
 			additionalPostTime := time.Now().UTC().Add(-240 * time.Hour)
 			msgToStream := &rpc.Message{
-				Id:         pr.NewObjectID().Hex(),
 				SenderName: "Test Man",
 				PostTime: &timestamp.Timestamp{
 					Seconds: additionalPostTime.Unix(),
@@ -64,13 +62,16 @@ var _ = Describe("Message Server", func() {
 				Profile: "https://google.com",
 				Message: "This is an example post from testman.",
 			}
-			data, err := msgpack.Marshal(msgToStream)
-			Expect(err).Should(Succeed())
 
 			ready.Wait()
-			Expect(
-				broker.Publish("messages/"+topicID.Hex(), data),
-			).Should(Succeed())
+			status, err := cli.Post(subCli.Context(), &rpc.PostRequest{
+				TopicId:   topicID.Hex(),
+				Name:      msgToStream.SenderName,
+				Message:   msgToStream.Message,
+				Recaptcha: "PASSED",
+			})
+			Expect(err).Should(Succeed())
+			msgToStream.Id = status.Id
 			msg, err := subCli.Recv()
 			Expect(err).Should(Succeed())
 			Expect(msg).Should(Equal(msgToStream))
