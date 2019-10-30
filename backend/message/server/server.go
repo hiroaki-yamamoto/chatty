@@ -91,6 +91,6 @@ func (me *Server) Subscribe(
 func (me *Server) Post(
 	ctx context.Context,
 	req *rpc.PostRequest,
-) (*rpc.Status, error) {
-	return nil, nil
+) (status *rpc.Status, err error) {
+	return
 }
