@@ -49,16 +49,9 @@ var _ = Describe("Message Server", func() {
 			}()
 		})
 		checkPostMsg := func(subCli rpc.MessageService_SubscribeClient) {
-			additionalPostTime := time.Now().UTC().Add(-240 * time.Hour)
 			msgToStream := &rpc.Message{
 				SenderName: "Test Man",
-				PostTime: &timestamp.Timestamp{
-					Seconds: additionalPostTime.Unix(),
-					Nanos: int32(
-						(additionalPostTime.Nanosecond() / 1000000) * 1000000,
-					),
-				},
-				Message: "This is an example post from testman.",
+				Message:    "This is an example post from testman.",
 			}
 
 			ready.Wait()
@@ -69,8 +62,9 @@ var _ = Describe("Message Server", func() {
 				Recaptcha: "PASSED",
 			})
 			Expect(err).Should(Succeed())
-			msgToStream.Id = status.Id
+			msgToStream.Id = status.GetId()
 			msg, err := subCli.Recv()
+			msgToStream.PostTime = msg.GetPostTime()
 			Expect(err).Should(Succeed())
 			Expect(msg).Should(Equal(msgToStream))
 		}

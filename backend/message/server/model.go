@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/golang/protobuf/ptypes/timestamp"
+	"github.com/hiroaki-yamamoto/real/backend/rpc"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -28,4 +30,17 @@ func (me *Model) Store(
 ) (err error) {
 	_, err = col.InsertOne(ctx, me)
 	return
+}
+
+// ToRPCMsg converts the model into *rpc.Message
+func (me *Model) ToRPCMsg() *rpc.Message {
+	return &rpc.Message{
+		Id:         me.ID.Hex(),
+		SenderName: me.SenderName,
+		PostTime: &timestamp.Timestamp{
+			Seconds: me.PostTime.Unix(),
+			Nanos:   int32(me.PostTime.Nanosecond()),
+		},
+		Message: me.Message,
+	}
 }

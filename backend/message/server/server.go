@@ -138,6 +138,10 @@ func (me *Server) Post(
 	if err != nil {
 		return
 	}
-	// go me.Broker.Publish(me.getBrokerSubject(), )
+	msg, err := msgpack.Marshal(model.ToRPCMsg())
+	if err != nil {
+		return
+	}
+	err = me.Broker.Publish(me.getBrokerSubject(req.GetTopicId()), msg)
 	return
 }
