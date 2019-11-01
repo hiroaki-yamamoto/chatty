@@ -1,5 +1,7 @@
 import * as jspb from "google-protobuf"
 
+import * as google_protobuf_timestamp_pb from 'google-protobuf/google/protobuf/timestamp_pb';
+
 export class TopicInfo extends jspb.Message {
   getId(): string;
   setId(value: string): void;
@@ -7,8 +9,13 @@ export class TopicInfo extends jspb.Message {
   getTitle(): string;
   setTitle(value: string): void;
 
-  getNumreplies(): number;
-  setNumreplies(value: number): void;
+  getLastdump(): google_protobuf_timestamp_pb.Timestamp | undefined;
+  setLastdump(value?: google_protobuf_timestamp_pb.Timestamp): void;
+  hasLastdump(): boolean;
+  clearLastdump(): void;
+
+  getNummsgs(): number;
+  setNummsgs(value: number): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): TopicInfo.AsObject;
@@ -22,7 +29,8 @@ export namespace TopicInfo {
   export type AsObject = {
     id: string,
     title: string,
-    numreplies: number,
+    lastdump?: google_protobuf_timestamp_pb.Timestamp.AsObject,
+    nummsgs: number,
   }
 }
 

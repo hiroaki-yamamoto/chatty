@@ -2,10 +2,13 @@ syntax = "proto3";
 
 option go_package="rpc";
 
+import "google/protobuf/timestamp.proto";
+
 message TopicInfo {
   string id = 1;
   string title = 2;
-  uint32 numReplies = 3;
+  google.protobuf.Timestamp lastDump = 3;
+  uint32 numMsgs = 4;
 }
 
 message TopicRequest {
