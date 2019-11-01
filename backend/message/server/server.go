@@ -143,5 +143,11 @@ func (me *Server) Post(
 		return
 	}
 	err = me.Broker.Publish(me.getBrokerSubject(req.GetTopicId()), msg)
+	if err != nil {
+		return
+	}
+	status = &rpc.Status{
+		Id: model.ID.Hex(),
+	}
 	return
 }

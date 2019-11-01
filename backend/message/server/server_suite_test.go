@@ -20,8 +20,7 @@ func TestServer(t *testing.T) {
 	RunSpecs(t, "Server Suite")
 }
 
-const PKGNAME = "message"
-
+var addr = "localhost:50000"
 var db *mongo.Database
 var cli rpc.MessageServiceClient
 var broker *nats.Conn
@@ -34,8 +33,7 @@ var _ = BeforeSuite(func() {
 	cfg = svrutils.LoadCfg()
 	cfg.Db.URI = "mongodb://real:real@testdb/"
 	cfg.Broker.URI = []string{"nats://testbroker:4222"}
-	cfg.Server.Type = "unix"
-	cfg.Server.Addr = "/tmp/" + PKGNAME + ".sock"
+	cfg.Server.Addr = addr
 	db = svrutils.ConnectDB(cfg).Database(cfg.Db.Name)
 	svr, lis = svrutils.Construct(cfg)
 	broker = svrutils.InitBroker(cfg)
@@ -49,7 +47,7 @@ var _ = BeforeSuite(func() {
 		}
 	}()
 	if con, err := grpc.Dial(
-		cfg.Server.Type+"://"+cfg.Server.Addr,
+		cfg.Server.Addr,
 		grpc.WithInsecure(),
 	); err != nil {
 		Fail("Connection Dial Failed: " + err.Error())

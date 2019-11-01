@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"log"
 	"time"
 
 	"github.com/golang/protobuf/ptypes/timestamp"
@@ -28,7 +29,13 @@ func (me *Model) Store(
 	ctx context.Context,
 	col *mongo.Collection,
 ) (err error) {
-	_, err = col.InsertOne(ctx, me)
+	var res *mongo.InsertOneResult
+	res, err = col.InsertOne(ctx, me)
+	id, ok := res.InsertedID.(primitive.ObjectID)
+	if !ok {
+		log.Println("[WARN] The returned ID was not ObjectID.")
+	}
+	me.ID = id
 	return
 }
 
