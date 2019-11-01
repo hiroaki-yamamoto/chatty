@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+option go_package="rpc";
+
+message StatsResponse {
+  string topicId = 1;
+  uint32 numMsgs = 2;
+  google.protobuf.Timestamp lastDump = 3;
+}
+
+message StatsRequest {
+  string topicId = 1;
+}
+
+service MessageStats {
+  rpc stats(stream StatsRequest) returns (stream StatsResponse);
+}
