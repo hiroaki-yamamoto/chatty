@@ -2,6 +2,7 @@ package server_test
 
 import (
 	"context"
+	"html"
 	"io"
 	"strconv"
 	"sync"
@@ -50,9 +51,13 @@ var _ = Describe("Message Server", func() {
 		})
 		checkPostMsg := func(subCli rpc.MessageService_SubscribeClient) {
 			msgToStream := &rpc.Message{
-				SenderName: "Test Man",
-				Message:    "This is an example post from testman.",
+				SenderName: "<h1>Test Man</h1>",
+				Message: `This is an
+        <a href="https://example.com">example</a> post from testman.`,
 			}
+			expMsg := msgToStream
+			expMsg.SenderName = html.EscapeString(expMsg.SenderName)
+			expMsg.Message = html.EscapeString(expMsg.Message)
 
 			ready.Wait()
 			status, err := cli.Post(subCli.Context(), &rpc.PostRequest{
@@ -62,11 +67,11 @@ var _ = Describe("Message Server", func() {
 				Recaptcha: "PASSED",
 			})
 			Expect(err).Should(Succeed())
-			msgToStream.Id = status.GetId()
+			expMsg.Id = status.GetId()
 			msg, err := subCli.Recv()
-			msgToStream.PostTime = msg.GetPostTime()
+			expMsg.PostTime = msg.GetPostTime()
 			Expect(err).Should(Succeed())
-			Expect(msg).Should(Equal(msgToStream))
+			Expect(msg).Should(Equal(expMsg))
 		}
 		checkInitMsg := func() (
 			rpc.MessageService_SubscribeClient,
@@ -102,20 +107,21 @@ var _ = Describe("Message Server", func() {
 					model := &Model{
 						ID:         msgID,
 						TopicID:    topicID,
-						SenderName: "Test User " + numStr,
+						SenderName: "<p>Test User " + numStr + "</p>",
 						PostTime:   initPostDate.Add(time.Duration(i) * time.Hour),
-						Message:    "This is a test: " + numStr,
-						Host:       "127.0.0.1",
+						Message: `This is a <a href="javascript.alert('hello');">
+            test</a>: ` + numStr,
+						Host: "127.0.0.1",
 					}
 					cols[i] = model
 					models[i] = &rpc.Message{
 						Id:         model.ID.Hex(),
-						SenderName: model.SenderName,
+						SenderName: html.EscapeString(model.SenderName),
 						PostTime: &timestamp.Timestamp{
 							Seconds: model.PostTime.Unix(),
 							Nanos:   int32((model.PostTime.Nanosecond() / 1000000) * 1000000),
 						},
-						Message: model.Message,
+						Message: html.EscapeString(model.Message),
 					}
 				}
 				ctx, cancel := cfg.Db.TimeoutContext(context.Background())

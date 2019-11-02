@@ -1,4 +1,3 @@
-//go:generate protoc --go_out=plugins=grpc:../rpc/message -I grpc ./grpc/stats.proto
 package main
 
 import (

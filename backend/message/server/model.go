@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"html"
 	"log"
 	"time"
 
@@ -40,8 +41,8 @@ func (me *Model) Store(
 }
 
 // ToRPCMsg converts the model into *rpc.Message
-func (me *Model) ToRPCMsg() *rpc.Message {
-	return &rpc.Message{
+func (me *Model) ToRPCMsg(escape bool) *rpc.Message {
+	ret := &rpc.Message{
 		Id:         me.ID.Hex(),
 		SenderName: me.SenderName,
 		PostTime: &timestamp.Timestamp{
@@ -50,4 +51,9 @@ func (me *Model) ToRPCMsg() *rpc.Message {
 		},
 		Message: me.Message,
 	}
+	if escape {
+		ret.SenderName = html.EscapeString(me.SenderName)
+		ret.Message = html.EscapeString(me.Message)
+	}
+	return ret
 }
