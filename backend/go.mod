@@ -11,14 +11,14 @@ require (
 	github.com/leodido/go-urn v1.2.0 // indirect
 	github.com/magiconair/properties v1.8.1 // indirect
 	github.com/nats-io/nats-server/v2 v2.1.0 // indirect
-	github.com/nats-io/nats.go v1.8.1
-	github.com/onsi/ginkgo v1.10.2
-	github.com/onsi/gomega v1.7.0
+	github.com/nats-io/nats.go v1.9.1
+	github.com/onsi/ginkgo v1.10.3
+	github.com/onsi/gomega v1.7.1
 	github.com/pelletier/go-toml v1.5.0 // indirect
 	github.com/spf13/afero v1.2.2 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/spf13/viper v1.4.0
+	github.com/spf13/viper v1.5.0
 	github.com/tidwall/pretty v1.0.0 // indirect
 	github.com/vmihailenco/msgpack/v4 v4.2.1
 	github.com/xdg/scram v0.0.0-20180814205039-7eeb5667e42c // indirect
