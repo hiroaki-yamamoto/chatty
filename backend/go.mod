@@ -9,7 +9,6 @@ require (
 	github.com/golang/snappy v0.0.1 // indirect
 	github.com/hiroaki-yamamoto/recaptcha v1.0.0
 	github.com/leodido/go-urn v1.2.0 // indirect
-	github.com/magiconair/properties v1.8.1 // indirect
 	github.com/nats-io/nats-server/v2 v2.1.0 // indirect
 	github.com/nats-io/nats.go v1.9.1
 	github.com/onsi/ginkgo v1.10.3
