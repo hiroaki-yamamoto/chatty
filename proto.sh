@@ -12,7 +12,10 @@ generateBackend() {
   done
   # **Internal** protocol between backend and **backend**
   for fle in backend/*/grpc/*.proto; do
-    protoc --go_out=plugins=grpc:${backendDir} -I $(dirname ${fle}) ${fle}
+    mkdir -p $(dirname $(dirname ${fle}))/rpc/
+    protoc \
+      --go_out=plugins=grpc:$(dirname $(dirname ${fle}))/rpc/ \
+      -I $(dirname ${fle}) ${fle}
   done
 }
 
@@ -35,7 +38,7 @@ case $1 in
     generateFrontend
     ;;
   "clean")
-    rm -rf ${backendDir} ${frontendDir}
+    rm -r ${backendDir} ${frontendDir} backend/*/rpc
     ;;
   *)
     generateBackend
