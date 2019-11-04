@@ -10,7 +10,7 @@ generateBackend() {
   for fle in grpc/*.proto; do
     protoc --go_out=plugins=grpc:${backendDir} -I grpc ${fle}
   done
-  # **Internal protocol between backend and **backend**
+  # **Internal** protocol between backend and **backend**
   for fle in backend/*/grpc/*.proto; do
     protoc --go_out=plugins=grpc:${backendDir} -I $(dirname ${fle}) ${fle}
   done
