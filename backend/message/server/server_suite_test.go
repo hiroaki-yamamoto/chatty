@@ -15,11 +15,6 @@ import (
 	"google.golang.org/grpc"
 )
 
-func TestServer(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Server Suite")
-}
-
 var addr = "localhost:50000"
 var db *mongo.Database
 var cli rpc.MessageServiceClient
@@ -29,13 +24,19 @@ var cfg *config.Config
 var lis net.Listener
 var svr *grpc.Server
 
+func TestServer(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Server Suite")
+}
+
 var _ = BeforeSuite(func() {
 	cfg = svrutils.LoadCfg()
 	cfg.Db.URI = "mongodb://real:real@testdb/"
 	cfg.Broker.URI = []string{"nats://testbroker:4222"}
-	cfg.Server.Addr = addr
+	pubSvrCfg := cfg.Servers["message"]
+	pubSvrCfg.Addr = addr
 	db = svrutils.ConnectDB(cfg).Database(cfg.Db.Name)
-	svr, lis = svrutils.Construct(cfg)
+	svr, lis = svrutils.Construct(pubSvrCfg)
 	broker = svrutils.InitBroker(cfg)
 	rpc.RegisterMessageServiceServer(
 		svr, &server.Server{Setting: cfg, Database: db, Broker: broker},
@@ -47,7 +48,7 @@ var _ = BeforeSuite(func() {
 		}
 	}()
 	if con, err := grpc.Dial(
-		cfg.Server.Addr,
+		pubSvrCfg.Addr,
 		grpc.WithInsecure(),
 	); err != nil {
 		Fail("Connection Dial Failed: " + err.Error())

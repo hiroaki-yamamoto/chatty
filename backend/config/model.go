@@ -3,7 +3,7 @@ package config
 // Config represents a configuration.
 type Config struct {
 	Db        DB
-	Server    Server
+	Servers   map[string]*Server
 	Broker    Broker
 	Recaptcha string
 }

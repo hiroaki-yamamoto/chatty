@@ -8,9 +8,10 @@ import (
 
 func main() {
 	cfg := svrutils.LoadCfg()
+	pubSvrCfg := cfg.Servers["message"]
 	broker := svrutils.InitBroker(cfg)
 	dbcli := svrutils.ConnectDB(cfg)
-	svr, lis := svrutils.Construct(cfg)
+	svr, lis := svrutils.Construct(pubSvrCfg)
 	rpc.RegisterMessageServiceServer(
 		svr,
 		&server.Server{
@@ -19,6 +20,6 @@ func main() {
 			Broker:   broker,
 		},
 	)
-	svrutils.Serve(lis, svr, cfg)
+	svrutils.Serve(lis, svr, pubSvrCfg)
 	defer svrutils.DisconnectDB(dbcli, &cfg.Db)
 }

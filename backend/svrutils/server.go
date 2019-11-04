@@ -14,10 +14,10 @@ import (
 
 // Construct the server without calling Register**.
 func Construct(
-	cfg *config.Config,
+	cfg *config.Server,
 	opts ...grpc.ServerOption,
 ) (*grpc.Server, net.Listener) {
-	lis, err := net.Listen(cfg.Server.Type, cfg.Server.Addr)
+	lis, err := net.Listen(cfg.Type, cfg.Addr)
 	if err != nil {
 		log.Panicln(err)
 	}
@@ -28,7 +28,7 @@ func Construct(
 func Serve(
 	lis net.Listener,
 	svr *grpc.Server,
-	cfg *config.Config,
+	cfg *config.Server,
 ) {
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, os.Interrupt)
@@ -43,7 +43,7 @@ func Serve(
 	defer close(sig)
 	log.Printf(
 		"Opening the server on %s as %s socket\n",
-		cfg.Server.Addr, cfg.Server.Type,
+		cfg.Addr, cfg.Type,
 	)
 	if err := svr.Serve(lis); err != nil {
 		log.Panicln("Server Start Failed: ", err)

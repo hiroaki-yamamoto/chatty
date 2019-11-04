@@ -8,8 +8,12 @@ broker:
   URI:
     - nats://broker:4222
 
-server:
-  type: 'tcp'
-  addr: ':50505'
+servers:
+  message:
+    type: 'tcp'
+    addr: ':50505'
+  messageInternal:
+    type: 'tcp'
+    addr: ':50506'
 
 recaptcha: '6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe'
