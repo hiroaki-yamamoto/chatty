@@ -26,11 +26,11 @@ type Server struct {
 }
 
 func (me *Server) getCollection() *mongo.Collection {
-	return me.Database.Collection("messages")
+	return me.Database.Collection(srvName)
 }
 
 func (me *Server) getBrokerSubject(topicID string) string {
-	return "messages/" + topicID
+	return srvName + "/" + topicID
 }
 
 // Subscribe handles subscribtions from users
@@ -76,7 +76,7 @@ func (me *Server) Subscribe(
 		return
 	}
 	defer chSub.Unsubscribe()
-	go me.Broker.Publish("status/messages/subscribe", []byte("ready"))
+	go me.Broker.Publish("status/"+srvName+"/subscribe", []byte("ready"))
 	for {
 		select {
 		case msg := <-msgCh:

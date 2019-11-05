@@ -29,7 +29,7 @@ var _ = Describe("Message Server", func() {
 	AfterEach(func() {
 		ctx, cancel := cfg.Db.TimeoutContext(context.Background())
 		defer cancel()
-		Expect(db.Collection("messages").Drop(ctx)).Should(Succeed())
+		Expect(db.Collection(srvName).Drop(ctx)).Should(Succeed())
 	})
 	Describe("Subscription", func() {
 		var models []*rpc.Message
@@ -37,7 +37,7 @@ var _ = Describe("Message Server", func() {
 		BeforeEach(func() {
 			ready.Add(1)
 			readyCh := make(chan *nats.Msg)
-			sub, err := broker.ChanSubscribe("status/messages/subscribe", readyCh)
+			sub, err := broker.ChanSubscribe("status/"+srvName+"/subscribe", readyCh)
 			Expect(err).Should(Succeed())
 			go func() {
 				defer close(readyCh)
@@ -126,7 +126,7 @@ var _ = Describe("Message Server", func() {
 				}
 				ctx, cancel := cfg.Db.TimeoutContext(context.Background())
 				defer cancel()
-				_, err := db.Collection("messages").InsertMany(ctx, cols)
+				_, err := db.Collection(srvName).InsertMany(ctx, cols)
 				Expect(err).Should(Succeed())
 			})
 			AfterEach(func() {

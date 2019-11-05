@@ -15,7 +15,9 @@ import (
 	"google.golang.org/grpc"
 )
 
-var addr = "localhost:50000"
+const srvName = "messages"
+const addr = "localhost:50000"
+
 var db *mongo.Database
 var cli rpc.MessageServiceClient
 var broker *nats.Conn
