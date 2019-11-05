@@ -1,0 +1,10 @@
+genFlags = --grpc-web_out=import_style=typescript,mode=grpcwebtext
+genInc = ../grpc
+outdir = ./rpc
+
+rule protoc
+  command = protoc $genFlags:$outdir -I $genInc $in
+
+build ./rpc/message_pb.d.ts ./rpc/MessageServiceClientPb.ts: protoc ../grpc/message.proto
+build ./rpc/topic_pb.d.ts ./rpc/TopicServiceClientPb.ts: protoc ../grpc/topic.proto
+build ./rpc/status_pb.d.ts: protoc ../grpc/status.proto

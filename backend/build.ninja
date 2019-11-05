@@ -1,0 +1,20 @@
+genFlags = --go_out=plugins=grpc
+
+rule protoc
+  command = protoc $genFlags:$outdir -I $include $in
+
+build rpc/message.pb.go: protoc ../grpc/message.proto
+  include = ../grpc
+  outdir = ./rpc
+
+build rpc/status.pb.go: protoc ../grpc/status.proto
+  include = ../grpc
+  outdir = ./rpc
+
+build rpc/topic.pb.go: protoc ../grpc/topic.proto
+  include = ../grpc
+  outdir = ./rpc
+
+build message/rpc/stats.pb.go: protoc message/grpc/stats.proto
+  include = message/grpc
+  outdir = message/rpc
