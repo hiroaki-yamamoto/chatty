@@ -2,6 +2,7 @@ package server_test
 
 import (
 	"context"
+	"fmt"
 	"html"
 	"io"
 	"strconv"
@@ -50,28 +51,34 @@ var _ = Describe("Message Server", func() {
 			}()
 		})
 		checkPostMsg := func(subCli rpc.MessageService_SubscribeClient) {
-			msgToStream := &rpc.Message{
-				SenderName: "<h1>Test Man</h1>",
-				Message: `This is an
-        <a href="https://example.com">example</a> post from testman.`,
-			}
-			expMsg := msgToStream
-			expMsg.SenderName = html.EscapeString(expMsg.SenderName)
-			expMsg.Message = html.EscapeString(expMsg.Message)
+			for count := 0; count < 45; count++ {
+				countTxt := strconv.Itoa(count)
+				msgToStream := &rpc.Message{
+					SenderName: "<h1>Test Man</h1>" + countTxt,
+					Message: fmt.Sprintf(
+						"This is an %s example %d%s post from testman.",
+						"<a href=\"https://example.com"+countTxt+"\">",
+						count, "</a>",
+					),
+				}
+				expMsg := msgToStream
+				expMsg.SenderName = html.EscapeString(expMsg.SenderName)
+				expMsg.Message = html.EscapeString(expMsg.Message)
 
-			ready.Wait()
-			status, err := cli.Post(subCli.Context(), &rpc.PostRequest{
-				TopicId:   topicID.Hex(),
-				Name:      msgToStream.SenderName,
-				Message:   msgToStream.Message,
-				Recaptcha: "PASSED",
-			})
-			Expect(err).Should(Succeed())
-			expMsg.Id = status.GetId()
-			msg, err := subCli.Recv()
-			expMsg.PostTime = msg.GetPostTime()
-			Expect(err).Should(Succeed())
-			Expect(msg).Should(Equal(expMsg))
+				ready.Wait()
+				status, err := cli.Post(subCli.Context(), &rpc.PostRequest{
+					TopicId:   topicID.Hex(),
+					Name:      msgToStream.SenderName,
+					Message:   msgToStream.Message,
+					Recaptcha: "PASSED",
+				})
+				Expect(err).Should(Succeed())
+				expMsg.Id = status.GetId()
+				msg, err := subCli.Recv()
+				expMsg.PostTime = msg.GetPostTime()
+				Expect(err).Should(Succeed())
+				Expect(msg).Should(Equal(expMsg))
+			}
 		}
 		checkInitMsg := func() (
 			rpc.MessageService_SubscribeClient,

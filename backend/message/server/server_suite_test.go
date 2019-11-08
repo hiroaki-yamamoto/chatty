@@ -1,6 +1,7 @@
 package server_test
 
 import (
+	"context"
 	"net"
 	"testing"
 
@@ -8,11 +9,13 @@ import (
 	"github.com/hiroaki-yamamoto/real/backend/message/server"
 	"github.com/hiroaki-yamamoto/real/backend/rpc"
 	"github.com/hiroaki-yamamoto/real/backend/svrutils"
+	"github.com/hiroaki-yamamoto/real/backend/validation"
 	"github.com/nats-io/nats.go"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"go.mongodb.org/mongo-driver/mongo"
 	"google.golang.org/grpc"
+	"gopkg.in/go-playground/validator.v9"
 )
 
 const srvName = "messages"
@@ -35,6 +38,16 @@ var _ = BeforeSuite(func() {
 	cfg = svrutils.LoadCfg()
 	cfg.Db.URI = "mongodb://real:real@testdb/"
 	cfg.Broker.URI = []string{"nats://testbroker:4222"}
+	validation.New = func(
+		reqCtx context.Context,
+		recapSecret string,
+	) (*validator.Validate, error) {
+		vld := validator.New()
+		vld.RegisterValidation("recap", func(fl validator.FieldLevel) bool {
+			return true
+		})
+		return vld, nil
+	}
 	pubSvrCfg := cfg.Servers["message"]
 	pubSvrCfg.Addr = addr
 	db = svrutils.ConnectDB(cfg).Database(cfg.Db.Name)

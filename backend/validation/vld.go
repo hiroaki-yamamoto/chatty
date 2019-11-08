@@ -13,7 +13,7 @@ import (
 
 // New creates a new form validation with the provided context.
 // the provided context is used to obtain the remote address for recaptcha.
-func New(
+var New = func(
 	reqCtx context.Context,
 	recapSecret string,
 ) (vld *validator.Validate, err error) {

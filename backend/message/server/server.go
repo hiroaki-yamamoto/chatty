@@ -117,6 +117,7 @@ func (me *Server) Post(
 		return
 	}
 	model := &Model{
+		ID:         primitive.NewObjectID(),
 		TopicID:    topicID,
 		SenderName: req.GetName(),
 		PostTime:   time.Now().UTC(),

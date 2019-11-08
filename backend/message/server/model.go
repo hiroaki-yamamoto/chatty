@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	"html"
 	"log"
 	"time"
@@ -32,9 +33,14 @@ func (me *Model) Store(
 ) (err error) {
 	var res *mongo.InsertOneResult
 	res, err = col.InsertOne(ctx, me)
+	if err != nil {
+		return
+	}
 	id, ok := res.InsertedID.(primitive.ObjectID)
 	if !ok {
-		log.Println("[WARN] The returned ID was not ObjectID.")
+		err = errors.New("The returned ID was not ObjectID")
+		log.Println("[WARN]" + err.Error())
+		return
 	}
 	me.ID = id
 	return
