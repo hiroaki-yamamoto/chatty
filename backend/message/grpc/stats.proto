@@ -6,7 +6,7 @@ import "google/protobuf/timestamp.proto";
 
 message StatsResponse {
   string topicId = 1;
-  uint32 numMsgs = 2;
+  int64 numMsgs = 2;
   google.protobuf.Timestamp lastDump = 3;
 }
 
