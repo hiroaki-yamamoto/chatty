@@ -2,6 +2,7 @@ package server
 
 import (
 	prvRPC "github.com/hiroaki-yamamoto/real/backend/message/rpc"
+	"github.com/nats-io/nats.go"
 	"go.mongodb.org/mongo-driver/bson"
 	pr "go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -9,11 +10,19 @@ import (
 
 // InternalServer is a server to provide internal information like stats info.
 type InternalServer struct {
-	DB *mongo.Database
+	DB     *mongo.Database
+	Broker *nats.Conn
 }
 
 func (me *InternalServer) collection() *mongo.Collection {
 	return me.DB.Collection(srvName)
+}
+
+func (me *InternalServer) subscribe(
+	topicID string,
+	ch chan *nats.Msg,
+) (*nats.Subscription, error) {
+	return me.Broker.ChanSubscribe(srvName+"/"+topicID, ch)
 }
 
 // Stats generates statistics report of the specified message
@@ -44,8 +53,17 @@ func (me *InternalServer) Stats(
 	if err != nil {
 		return
 	}
+	msgCh := make(chan *nats.Msg)
+	defer close(msgCh)
+	sub, err := me.subscribe(topicID.Hex(), msgCh)
+	if err != nil {
+		return
+	}
+	defer sub.Unsubscribe()
 	for {
 		select {
+		case msg := <-msgCh:
+			// Decode the data
 		case <-srv.Context().Done():
 			return
 		}
