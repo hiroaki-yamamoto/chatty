@@ -42,6 +42,7 @@ func (me *InternalServer) Stats(
 	}
 	col := me.collection()
 	numDoc, err = col.CountDocuments(srv.Context(), bson.M{"topicid": topicID})
+	// col.Find(srv.Context(), bson.M{"topicid": topicID, "dump": true})
 	if err != nil {
 		return
 	}
@@ -62,7 +63,7 @@ func (me *InternalServer) Stats(
 	defer sub.Unsubscribe()
 	for {
 		select {
-		case msg := <-msgCh:
+		case <-msgCh:
 			// Decode the data
 		case <-srv.Context().Done():
 			return

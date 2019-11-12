@@ -9,7 +9,8 @@ message Message {
   string id = 1;
   string senderName = 2;
   google.protobuf.Timestamp postTime = 3;
-  string message = 5;
+  string message = 4;
+  bool bump = 5;
 }
 
 message MessageRequest {
@@ -20,7 +21,7 @@ message MessageRequest {
 message PostRequest {
   string topicId = 1;
   string name = 2;
-  bool noDump = 3;
+  bool bump = 3;
   string message = 4;
   string recaptcha = 5;
 }

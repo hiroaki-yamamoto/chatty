@@ -21,7 +21,8 @@ type Model struct {
 	PostTime   time.Time `validate:"required"`
 	Message    string    `validate:"required"`
 	Host       string    `validate:"required"`
-	Recaptcha  string    `bson:"-" validate:"recap"`
+	Bump       bool
+	Recaptcha  string `bson:"-" validate:"recap"`
 }
 
 // Store the model to the collection.
@@ -56,6 +57,7 @@ func (me *Model) ToRPCMsg(escape bool) *rpc.Message {
 			Nanos:   int32(me.PostTime.Nanosecond()),
 		},
 		Message: me.Message,
+		Bump:    me.Bump,
 	}
 	if escape {
 		ret.SenderName = html.EscapeString(me.SenderName)

@@ -60,6 +60,7 @@ var _ = Describe("Message Server", func() {
 						"<a href=\"https://example.com"+countTxt+"\">",
 						count, "</a>",
 					),
+					Bump: count&0x01 == 0x01,
 				}
 				expMsg := msgToStream
 				expMsg.SenderName = html.EscapeString(expMsg.SenderName)
@@ -71,6 +72,7 @@ var _ = Describe("Message Server", func() {
 					Name:      msgToStream.SenderName,
 					Message:   msgToStream.Message,
 					Recaptcha: "PASSED",
+					Bump:      msgToStream.Bump,
 				})
 				Expect(err).Should(Succeed())
 				expMsg.Id = status.GetId()
@@ -119,6 +121,7 @@ var _ = Describe("Message Server", func() {
 						Message: `This is a <a href="javascript.alert('hello');">
             test</a>: ` + numStr,
 						Host: "127.0.0.1",
+						Bump: i&0x01 == 0x01,
 					}
 					cols[i] = model
 					models[i] = &rpc.Message{
@@ -129,6 +132,7 @@ var _ = Describe("Message Server", func() {
 							Nanos:   int32((model.PostTime.Nanosecond() / 1000000) * 1000000),
 						},
 						Message: html.EscapeString(model.Message),
+						Bump:    model.Bump,
 					}
 				}
 				ctx, cancel := cfg.Db.TimeoutContext(context.Background())

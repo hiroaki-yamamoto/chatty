@@ -123,6 +123,7 @@ func (me *Server) Post(
 		PostTime:   time.Now().UTC(),
 		Message:    req.GetMessage(),
 		Host:       remoteIP,
+		Bump:       req.GetBump(),
 	}
 	err = vld.Struct(model)
 	if err != nil {
