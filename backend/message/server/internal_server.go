@@ -73,7 +73,7 @@ func (me *InternalServer) Stats(
 			}
 			resp.NumMsgs++
 			if msg.GetBump() {
-				resp.LastDump = msg.GetPostTime()
+				resp.LastBump = msg.GetPostTime()
 			}
 			srv.Send(resp)
 		case <-srv.Context().Done():
