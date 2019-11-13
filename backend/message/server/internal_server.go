@@ -2,7 +2,9 @@ package server
 
 import (
 	prvRPC "github.com/hiroaki-yamamoto/real/backend/message/rpc"
+	"github.com/hiroaki-yamamoto/real/backend/rpc"
 	"github.com/nats-io/nats.go"
+	"github.com/vmihailenco/msgpack/v4"
 	"go.mongodb.org/mongo-driver/bson"
 	pr "go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -63,8 +65,17 @@ func (me *InternalServer) Stats(
 	defer sub.Unsubscribe()
 	for {
 		select {
-		case <-msgCh:
-			// Decode the data
+		case rec := <-msgCh:
+			var msg rpc.Message
+			err = msgpack.Unmarshal(rec.Data, &msg)
+			if err != nil {
+				return
+			}
+			resp.NumMsgs++
+			if msg.GetBump() {
+				resp.LastDump = msg.GetPostTime()
+			}
+			srv.Send(resp)
 		case <-srv.Context().Done():
 			return
 		}
