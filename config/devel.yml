@@ -12,7 +12,7 @@ servers:
   message:
     type: 'tcp'
     addr: ':50505'
-  messageInternal:
+  message/stats:
     type: 'tcp'
     addr: ':50506'
 
