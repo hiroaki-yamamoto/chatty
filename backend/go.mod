@@ -3,12 +3,10 @@ module github.com/hiroaki-yamamoto/real/backend
 go 1.13
 
 require (
-	github.com/go-playground/locales v0.13.0 // indirect
-	github.com/go-playground/universal-translator v0.16.0 // indirect
+	github.com/go-playground/validator/v10 v10.0.0
 	github.com/golang/protobuf v1.3.2
 	github.com/golang/snappy v0.0.1 // indirect
 	github.com/hiroaki-yamamoto/recaptcha v1.0.0
-	github.com/leodido/go-urn v1.2.0 // indirect
 	github.com/nats-io/nats-server/v2 v2.1.0 // indirect
 	github.com/nats-io/nats.go v1.9.1
 	github.com/onsi/ginkgo v1.10.3
@@ -29,6 +27,4 @@ require (
 	golang.org/x/sys v0.0.0-20191010194322-b09406accb47 // indirect
 	google.golang.org/genproto v0.0.0-20191009194640-548a555dbc03 // indirect
 	google.golang.org/grpc v1.25.1
-	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
-	gopkg.in/go-playground/validator.v10 v10.0.0
 )

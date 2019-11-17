@@ -15,7 +15,7 @@ import (
 	. "github.com/onsi/gomega"
 	"go.mongodb.org/mongo-driver/mongo"
 	"google.golang.org/grpc"
-	"gopkg.in/go-playground/validator.v9"
+	"github.com/go-playground/validator/v10"
 )
 
 const srvName = "messages"

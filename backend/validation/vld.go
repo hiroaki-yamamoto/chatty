@@ -8,7 +8,7 @@ import (
 
 	"github.com/hiroaki-yamamoto/recaptcha"
 	"google.golang.org/grpc/peer"
-	"gopkg.in/go-playground/validator.v9"
+	"github.com/go-playground/validator/v10"
 )
 
 // New creates a new form validation with the provided context.
