@@ -62,6 +62,7 @@ github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0/go.mod h1:8NvIoxWQoOIhqOTXgf
 github.com/grpc-ecosystem/grpc-gateway v1.9.0/go.mod h1:vNeuVxBJEsws4ogUvrchl83t/GYV9WGTSLVdBhOQFDY=
 github.com/hashicorp/hcl v1.0.0 h1:0Anlzjpi4vEasTeNFn2mLJgTSwt0+6sfsiTG8qcWGx4=
 github.com/hashicorp/hcl v1.0.0/go.mod h1:E5yfLk+7swimpb2L/Alb/PJmXilQ/rhwaUYs4T20WEQ=
+github.com/hiroaki-yamamoto/real v0.0.0-20191117222655-9900c893528f h1:lZl2YtLk7OkzUVJtyUuWORuwYDmmZWaGZAeyOkoYleU=
 github.com/hiroaki-yamamoto/recaptcha v1.0.0 h1:c2/D0CfLfRJ8OqMsI5eWH8GOxxV0sSc6pIDAGlrX7Eo=
 github.com/hiroaki-yamamoto/recaptcha v1.0.0/go.mod h1:VqGbFhr5Oc1s/24tXDDROuqu5/XoE3aiPjkicJSccN4=
 github.com/hpcloud/tail v1.0.0 h1:nfCOvKYfkgYP8hkirhJocXT2+zOD8yUNjXaWfTlyFKI=
