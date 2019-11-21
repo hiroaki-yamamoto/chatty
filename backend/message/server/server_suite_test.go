@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/hiroaki-yamamoto/real/backend/config"
+	intRPC "github.com/hiroaki-yamamoto/real/backend/message/rpc"
 	"github.com/hiroaki-yamamoto/real/backend/message/server"
 	"github.com/hiroaki-yamamoto/real/backend/rpc"
 	"github.com/hiroaki-yamamoto/real/backend/svrutils"
@@ -18,19 +19,20 @@ import (
 	"google.golang.org/grpc"
 )
 
-type SL struct {
+type Service struct {
 	Server   *grpc.Server
 	Listener net.Listener
+	Con      *grpc.ClientConn
 }
 
 const srvName = "messages"
 
 var db *mongo.Database
-var cli rpc.MessageServiceClient
+var pubCli rpc.MessageServiceClient
+var statCli intRPC.MessageStatsClient
 var broker *nats.Conn
-var clicon *grpc.ClientConn
 var cfg *config.Config
-var svrs []*SL
+var srvs []*Service
 
 func TestServer(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -42,7 +44,7 @@ var _ = BeforeSuite(func() {
 	mockValidation()
 	startBroker()
 	db = svrutils.ConnectDB(cfg).Database(cfg.Db.Name)
-	startSvr(cfg.Servers["message"])
+	startPubSvr()
 })
 
 func setCfg() {
@@ -70,15 +72,17 @@ func startBroker() {
 	broker = svrutils.InitBroker(cfg)
 }
 
-func startSvr(svrCfg *config.Server) {
+func startPubSvr() {
+	svrCfg := cfg.Servers["message"]
 	svr, lis := svrutils.Construct(svrCfg)
 	rpc.RegisterMessageServiceServer(
 		svr, &server.Server{Setting: cfg, Database: db, Broker: broker},
 	)
-	svrs = append(svrs, &SL{
+	srv := &Service{
 		Server:   svr,
 		Listener: lis,
-	})
+	}
+	srvs = append(srvs, srv)
 
 	go func() {
 		if err := svr.Serve(lis); err != nil {
@@ -89,18 +93,19 @@ func startSvr(svrCfg *config.Server) {
 	if con, err := grpc.Dial(svrCfg.Addr, grpc.WithInsecure()); err != nil {
 		Fail("Connection Dial Failed: " + err.Error())
 	} else {
-		cli = rpc.NewMessageServiceClient(con)
-		clicon = con
+		pubCli = rpc.NewMessageServiceClient(con)
+		srv.Con = con
 	}
 }
 
 var _ = AfterSuite(func() {
-	if clicon != nil {
-		clicon.Close()
-	}
-	for _, sl := range svrs {
+	for _, sl := range srvs {
 		svr := sl.Server
 		lis := sl.Listener
+		con := sl.Con
+		if con != nil {
+			con.Close()
+		}
 		if svr != nil {
 			svr.GracefulStop()
 		}

@@ -67,7 +67,7 @@ var _ = Describe("Message Server", func() {
 				expMsg.Message = html.EscapeString(expMsg.Message)
 
 				ready.Wait()
-				status, err := cli.Post(subCli.Context(), &rpc.PostRequest{
+				status, err := pubCli.Post(subCli.Context(), &rpc.PostRequest{
 					TopicId:   topicID.Hex(),
 					Name:      msgToStream.SenderName,
 					Message:   msgToStream.Message,
@@ -88,7 +88,7 @@ var _ = Describe("Message Server", func() {
 		) {
 			ctx, stop := context.WithTimeout(context.Background(), 5*time.Second)
 			actual := make([]*rpc.Message, cap(models))
-			subCli, err := cli.Subscribe(ctx, &rpc.MessageRequest{
+			subCli, err := pubCli.Subscribe(ctx, &rpc.MessageRequest{
 				TopicId: topicID.Hex(),
 			})
 			Expect(err).Should(Succeed())
@@ -157,7 +157,7 @@ var _ = Describe("Message Server", func() {
 			It("Recives the message when it's posted.", func() {
 				ctx, stop := context.WithTimeout(context.Background(), 5*time.Second)
 				defer stop()
-				subCli, err := cli.Subscribe(ctx, &rpc.MessageRequest{
+				subCli, err := pubCli.Subscribe(ctx, &rpc.MessageRequest{
 					TopicId: topicID.Hex(),
 				})
 				Expect(err).Should(Succeed())
