@@ -5,6 +5,7 @@ import (
 	"net"
 	"testing"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/hiroaki-yamamoto/real/backend/config"
 	"github.com/hiroaki-yamamoto/real/backend/message/server"
 	"github.com/hiroaki-yamamoto/real/backend/rpc"
@@ -15,19 +16,21 @@ import (
 	. "github.com/onsi/gomega"
 	"go.mongodb.org/mongo-driver/mongo"
 	"google.golang.org/grpc"
-	"github.com/go-playground/validator/v10"
 )
 
+type SL struct {
+	Server   *grpc.Server
+	Listener net.Listener
+}
+
 const srvName = "messages"
-const addr = "localhost:50000"
 
 var db *mongo.Database
 var cli rpc.MessageServiceClient
 var broker *nats.Conn
 var clicon *grpc.ClientConn
 var cfg *config.Config
-var lis net.Listener
-var svr *grpc.Server
+var svrs []*SL
 
 func TestServer(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -35,9 +38,22 @@ func TestServer(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
+	setCfg()
+	mockValidation()
+	startBroker()
+	db = svrutils.ConnectDB(cfg).Database(cfg.Db.Name)
+	startSvr(cfg.Servers["message"])
+})
+
+func setCfg() {
 	cfg = svrutils.LoadCfg()
 	cfg.Db.URI = "mongodb://real:real@testdb/"
 	cfg.Broker.URI = []string{"nats://testbroker:4222"}
+	cfg.Servers["message"].Addr = "localhost:50000"
+	cfg.Servers["message/stats"].Addr = "localhost:50001"
+}
+
+func mockValidation() {
 	validation.New = func(
 		reqCtx context.Context,
 		recapSecret string,
@@ -48,42 +64,51 @@ var _ = BeforeSuite(func() {
 		})
 		return vld, nil
 	}
-	pubSvrCfg := cfg.Servers["message"]
-	pubSvrCfg.Addr = addr
-	db = svrutils.ConnectDB(cfg).Database(cfg.Db.Name)
-	svr, lis = svrutils.Construct(pubSvrCfg)
+}
+
+func startBroker() {
 	broker = svrutils.InitBroker(cfg)
+}
+
+func startSvr(svrCfg *config.Server) {
+	svr, lis := svrutils.Construct(svrCfg)
 	rpc.RegisterMessageServiceServer(
 		svr, &server.Server{Setting: cfg, Database: db, Broker: broker},
 	)
+	svrs = append(svrs, &SL{
+		Server:   svr,
+		Listener: lis,
+	})
 
 	go func() {
 		if err := svr.Serve(lis); err != nil {
 			Fail("Server Start Failed: " + err.Error())
 		}
 	}()
-	if con, err := grpc.Dial(
-		pubSvrCfg.Addr,
-		grpc.WithInsecure(),
-	); err != nil {
+
+	if con, err := grpc.Dial(svrCfg.Addr, grpc.WithInsecure()); err != nil {
 		Fail("Connection Dial Failed: " + err.Error())
 	} else {
 		cli = rpc.NewMessageServiceClient(con)
 		clicon = con
 	}
-})
+}
 
 var _ = AfterSuite(func() {
 	if clicon != nil {
 		clicon.Close()
 	}
-	if svr != nil {
-		svr.GracefulStop()
-	}
-	if db != nil {
-	}
-	if lis != nil {
-		lis.Close()
+	for _, sl := range svrs {
+		svr := sl.Server
+		lis := sl.Listener
+		if svr != nil {
+			svr.GracefulStop()
+		}
+		if db != nil {
+		}
+		if lis != nil {
+			lis.Close()
+		}
 	}
 	svrutils.DisconnectDB(db.Client(), &cfg.Db)
 	broker.Close()
