@@ -8,12 +8,14 @@ import (
 )
 
 func main() {
-	manager := &svrutils.ServerManager{}
-	defer manager.CloseAll()
+	manager := svrutils.ServerManager{}
 	cfg := svrutils.LoadCfg()
 	broker := svrutils.InitBroker(cfg)
 	dbcli := svrutils.ConnectDB(cfg)
+	defer broker.Close()
+	defer manager.CloseAll()
 	defer svrutils.DisconnectDB(dbcli, &cfg.Db)
+
 	svr, _ := manager.Construct(cfg.Servers["message"])
 	statsSvr, _ := manager.Construct(cfg.Servers["message/stats"])
 	rpc.RegisterMessageServiceServer(
@@ -28,6 +30,6 @@ func main() {
 		DB:     dbcli.Database(cfg.Db.Name),
 		Broker: broker,
 	})
-	// go manager.TrapInt()
+	go manager.TrapInt()
 	manager.Serve()
 }
