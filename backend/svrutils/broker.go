@@ -17,15 +17,15 @@ func InitBroker(cfg *config.Config) (cli *nats.Conn) {
 	if cli, err = cfg.Broker.Connect(); err != nil {
 		log.Panicln(err)
 	}
-	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, os.Interrupt)
 	go func() {
+		sig := make(chan os.Signal)
+		signal.Notify(sig, os.Interrupt)
+		defer close(sig)
 		for range sig {
 			log.Print("Closing Broker Client...")
 			cli.Close()
 			log.Print("Broker Client has been closed...")
 		}
 	}()
-	defer close(sig)
 	return
 }

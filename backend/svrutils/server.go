@@ -21,6 +21,7 @@ type server struct {
 // ServerManager is used for server management.
 type ServerManager struct {
 	Servers []*server
+	wg      sync.WaitGroup
 }
 
 // Construct the server and listener.
@@ -58,14 +59,14 @@ func (me *ServerManager) CloseAll() {
 	for _, srv := range me.Servers {
 		srv.Server.GracefulStop()
 		srv.Listener.Close()
+		me.wg.Done()
 	}
 	me.Servers = nil
 }
 
 // Serve runs the server.
 func (me *ServerManager) Serve() {
-	var wg sync.WaitGroup
-	wg.Add(len(me.Servers))
+	me.wg.Add(len(me.Servers))
 	for _, srv := range me.Servers {
 		addr := srv.Listener.Addr()
 		log.Printf(
@@ -76,8 +77,7 @@ func (me *ServerManager) Serve() {
 			if err := svr.Serve(lis); err != nil {
 				log.Panicln("Server Start Failed: ", err)
 			}
-			wg.Done()
 		}(srv.Server, srv.Listener)
 	}
-	wg.Wait()
+	me.wg.Wait()
 }
