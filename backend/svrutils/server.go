@@ -7,13 +7,24 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"sync"
 
 	"github.com/hiroaki-yamamoto/real/backend/config"
 	"google.golang.org/grpc"
 )
 
-// Construct the server without calling Register**.
-func Construct(
+type server struct {
+	Server   *grpc.Server
+	Listener net.Listener
+}
+
+// ServerManager is used for server management.
+type ServerManager struct {
+	Servers []*server
+}
+
+// Construct the server and listener.
+func (me *ServerManager) Construct(
 	cfg *config.Server,
 	opts ...grpc.ServerOption,
 ) (*grpc.Server, net.Listener) {
@@ -21,31 +32,52 @@ func Construct(
 	if err != nil {
 		log.Panicln(err)
 	}
-	return grpc.NewServer(opts...), lis
+	svr := &server{
+		Server:   grpc.NewServer(opts...),
+		Listener: lis,
+	}
+	me.Servers = append(me.Servers, svr)
+	return svr.Server, svr.Listener
 }
 
-// Serve runs the server and trap int for graceful shutdown.
-func Serve(
-	lis net.Listener,
-	svr *grpc.Server,
-	cfg *config.Server,
-) {
-	sig := make(chan os.Signal, 1)
+// TrapInt handles Graceful Stop by SIGINT.
+// Note that this function runs **synchronously**, not async.
+func (me *ServerManager) TrapInt() {
+	sig := make(chan os.Signal)
 	signal.Notify(sig, os.Interrupt)
-	go func() {
-		for range sig {
-			log.Print("Gracefully Shutting The Server Down...")
-			svr.GracefulStop()
-			lis.Close()
-			log.Print("Server Gracefuly Closed.")
-		}
-	}()
 	defer close(sig)
-	log.Printf(
-		"Opening the server on %s as %s socket\n",
-		cfg.Addr, cfg.Type,
-	)
-	if err := svr.Serve(lis); err != nil {
-		log.Panicln("Server Start Failed: ", err)
+	for range sig {
+		log.Print("Gracefully Shutting The Server Down...")
+		me.CloseAll()
+		log.Print("Server Gracefuly Closed.")
 	}
+}
+
+// CloseAll closes all the servers and listeners.
+func (me *ServerManager) CloseAll() {
+	for _, srv := range me.Servers {
+		srv.Server.GracefulStop()
+		srv.Listener.Close()
+	}
+	me.Servers = nil
+}
+
+// Serve runs the server.
+func (me *ServerManager) Serve() {
+	var wg sync.WaitGroup
+	wg.Add(len(me.Servers))
+	for _, srv := range me.Servers {
+		addr := srv.Listener.Addr()
+		log.Printf(
+			"Opening the server on %s as %s socket\n",
+			addr.String(), addr.Network(),
+		)
+		go func(svr *grpc.Server, lis net.Listener) {
+			if err := svr.Serve(lis); err != nil {
+				log.Panicln("Server Start Failed: ", err)
+			}
+			wg.Done()
+		}(srv.Server, srv.Listener)
+	}
+	wg.Wait()
 }
