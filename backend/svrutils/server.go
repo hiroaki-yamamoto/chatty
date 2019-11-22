@@ -50,7 +50,7 @@ func (me *ServerManager) TrapInt() {
 	for range sig {
 		log.Print("Gracefully Shutting The Server Down...")
 		me.CloseAll()
-		log.Print("Server Gracefuly Closed.")
+		log.Print("Server Gracefully Closed.")
 	}
 }
 
