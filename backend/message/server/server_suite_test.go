@@ -40,7 +40,9 @@ var _ = BeforeSuite(func() {
 	startBroker()
 	db = svrutils.ConnectDB(cfg).Database(cfg.Db.Name)
 	pubSvr, pubLis := svrMgr.Construct(cfg.Servers["message"])
+	intSvr, intLis := svrMgr.Construct(cfg.Servers["message/stats"])
 	preparePubServer(pubSvr, pubLis)
+	prepareInternalServer(intSvr, intLis)
 	go svrMgr.TrapInt()
 	go svrMgr.Serve()
 })
@@ -84,7 +86,7 @@ func preparePubServer(svr *grpc.Server, lis net.Listener) {
 	}
 }
 
-func preapreInternalServer(svr *grpc.Server, lis net.Listener) {
+func prepareInternalServer(svr *grpc.Server, lis net.Listener) {
 	addr := lis.Addr()
 	intRPC.RegisterMessageStatsServer(
 		svr, &server.InternalServer{DB: db, Broker: broker},
@@ -93,7 +95,7 @@ func preapreInternalServer(svr *grpc.Server, lis net.Listener) {
 	if con, err := grpc.Dial(addr.String(), grpc.WithInsecure()); err != nil {
 		Fail("Connection Dial Failed: " + err.Error())
 	} else {
-		pubCli = rpc.NewMessageServiceClient(con)
+		statCli = intRPC.NewMessageStatsClient(con)
 		clicons = append(clicons, con)
 	}
 }
