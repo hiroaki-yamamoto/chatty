@@ -19,12 +19,6 @@ import (
 	"google.golang.org/grpc"
 )
 
-type Service struct {
-	Server   *grpc.Server
-	Listener net.Listener
-	Con      *grpc.ClientConn
-}
-
 const srvName = "messages"
 
 var db *mongo.Database
@@ -32,7 +26,8 @@ var pubCli rpc.MessageServiceClient
 var statCli intRPC.MessageStatsClient
 var broker *nats.Conn
 var cfg *config.Config
-var srvs []*Service
+var svrMgr svrutils.ServerManager
+var clicons []*grpc.ClientConn
 
 func TestServer(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -44,7 +39,10 @@ var _ = BeforeSuite(func() {
 	mockValidation()
 	startBroker()
 	db = svrutils.ConnectDB(cfg).Database(cfg.Db.Name)
-	startPubSvr()
+	pubSvr, pubLis := svrMgr.Construct(cfg.Servers["message"])
+	preparePubServer(pubSvr, pubLis)
+	go svrMgr.TrapInt()
+	go svrMgr.Serve()
 })
 
 func setCfg() {
@@ -72,49 +70,42 @@ func startBroker() {
 	broker = svrutils.InitBroker(cfg)
 }
 
-func startPubSvr() {
-	svrCfg := cfg.Servers["message"]
-	svr, lis := svrutils.Construct(svrCfg)
+func preparePubServer(svr *grpc.Server, lis net.Listener) {
+	addr := lis.Addr()
 	rpc.RegisterMessageServiceServer(
 		svr, &server.Server{Setting: cfg, Database: db, Broker: broker},
 	)
-	srv := &Service{
-		Server:   svr,
-		Listener: lis,
-	}
-	srvs = append(srvs, srv)
 
-	go func() {
-		if err := svr.Serve(lis); err != nil {
-			Fail("Server Start Failed: " + err.Error())
-		}
-	}()
-
-	if con, err := grpc.Dial(svrCfg.Addr, grpc.WithInsecure()); err != nil {
+	if con, err := grpc.Dial(addr.String(), grpc.WithInsecure()); err != nil {
 		Fail("Connection Dial Failed: " + err.Error())
 	} else {
 		pubCli = rpc.NewMessageServiceClient(con)
-		srv.Con = con
+		clicons = append(clicons, con)
+	}
+}
+
+func preapreInternalServer(svr *grpc.Server, lis net.Listener) {
+	addr := lis.Addr()
+	intRPC.RegisterMessageStatsServer(
+		svr, &server.InternalServer{DB: db, Broker: broker},
+	)
+
+	if con, err := grpc.Dial(addr.String(), grpc.WithInsecure()); err != nil {
+		Fail("Connection Dial Failed: " + err.Error())
+	} else {
+		pubCli = rpc.NewMessageServiceClient(con)
+		clicons = append(clicons, con)
 	}
 }
 
 var _ = AfterSuite(func() {
-	for _, sl := range srvs {
-		svr := sl.Server
-		lis := sl.Listener
-		con := sl.Con
+	svrMgr.CloseAll()
+	for _, con := range clicons {
 		if con != nil {
 			con.Close()
 		}
-		if svr != nil {
-			svr.GracefulStop()
-		}
-		if db != nil {
-		}
-		if lis != nil {
-			lis.Close()
-		}
 	}
+	clicons = nil
 	svrutils.DisconnectDB(db.Client(), &cfg.Db)
 	broker.Close()
 })
