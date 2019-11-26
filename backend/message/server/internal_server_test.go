@@ -3,6 +3,7 @@ package server_test
 import (
 	"context"
 	"strconv"
+	"sync"
 	"time"
 
 	. "github.com/onsi/ginkgo"
@@ -10,20 +11,24 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	pr "go.mongodb.org/mongo-driver/bson/primitive"
 
+	intRPC "github.com/hiroaki-yamamoto/real/backend/message/rpc"
 	. "github.com/hiroaki-yamamoto/real/backend/message/server"
 )
 
 var _ = Describe("InternalServer", func() {
 	Context("With Initial Model", func() {
-		var topicIDs []pr.ObjectID
+		var expMsgs []*intRPC.StatsResponse
 		BeforeEach(func() {
 			const numTopics = 40
 			const numResp = 40
-			topicIDs = make([]pr.ObjectID, numTopics)
-			msgs := make(bson.A, numTopics*numResp)
+			expMsgs = make([]*intRPC.StatsResponse, numTopics)
+			var msgs bson.A
 			for ti := 0; ti < numTopics; ti++ {
 				topicID := pr.NewObjectID()
-				topicIDs[ti] = topicID
+				expMsgs[ti] = &intRPC.StatsResponse{
+					TopicId: topicID.Hex(),
+					NumMsgs: int64(numResp - ti),
+				}
 				initPostDate := time.Now().UTC()
 				initPostDate = initPostDate.Add(
 					-time.Duration(initPostDate.Minute()) * time.Minute,
@@ -34,7 +39,7 @@ var _ = Describe("InternalServer", func() {
 				).Add(
 					time.Duration(ti) * time.Minute,
 				)
-				for ri := 0; ri < numResp; ri++ {
+				for ri := ti; ri < numResp; ri++ {
 					msgNum := strconv.Itoa(ri)
 					if len(msgNum) < 1 {
 						msgNum = " **( Undefined )** "
@@ -49,7 +54,7 @@ var _ = Describe("InternalServer", func() {
 						Host: "127.0.0.1",
 						Bump: ri&0x01 == 0x01,
 					}
-					msgs[(ri*numResp)+ri] = model
+					msgs = append(msgs, model)
 				}
 			}
 			ctx, cancel := cfg.Db.TimeoutContext(context.Background())
@@ -62,7 +67,7 @@ var _ = Describe("InternalServer", func() {
 			defer cancel()
 			err := db.Collection(srvName).Drop(ctx)
 			Expect(err).Should(Succeed())
-			topicIDs = nil
+			expMsgs = nil
 		})
 		Context("Doesn't contain non-existent model", func() {
 			It("Should recieve stats data", func() {
@@ -70,11 +75,41 @@ var _ = Describe("InternalServer", func() {
 					context.Background(), 10*time.Second,
 				)
 				defer cancelStats()
-				// statsCli, err := prvCli.Stats(statsCtx)
 				statsCli, err := prvCli.Stats(statsCtx)
 				Expect(err).Should(Succeed())
-				Fail("Not Implemented Yet")
-			})
+
+				statsLst := make([]*intRPC.StatsResponse, len(expMsgs))
+				var wg sync.WaitGroup
+				sendErrCh := make(chan error)
+				recvErrCh := make(chan error)
+				wg.Add(2)
+				go func(errCh chan error) {
+					for _, expMsg := range expMsgs {
+						errCh <- statsCli.Send(
+							&intRPC.StatsRequest{TopicId: expMsg.TopicId},
+						)
+					}
+					wg.Done()
+				}(sendErrCh)
+				go func(errCh chan error) {
+					for i := 0; i < len(statsLst); i++ {
+						stats, err := statsCli.Recv()
+						errCh <- err
+						if err != nil {
+							return
+						}
+						statsLst[i] = stats
+					}
+					wg.Done()
+				}(recvErrCh)
+				for i := 0; i < len(expMsgs); i++ {
+					Expect(<-sendErrCh).Should(Succeed())
+					Expect(<-recvErrCh).Should(Succeed())
+				}
+				wg.Wait()
+				Expect(len(statsLst)).Should(Equal(len(expMsgs)))
+				Expect(statsLst).Should(ConsistOf(expMsgs))
+			}, 4000)
 		})
 	})
 })
