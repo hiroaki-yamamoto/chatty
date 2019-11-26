@@ -23,7 +23,7 @@ const srvName = "messages"
 
 var db *mongo.Database
 var pubCli rpc.MessageServiceClient
-var statCli intRPC.MessageStatsClient
+var prvCli intRPC.MessageStatsClient
 var broker *nats.Conn
 var cfg *config.Config
 var svrMgr svrutils.ServerManager
@@ -95,7 +95,7 @@ func prepareInternalServer(svr *grpc.Server, lis net.Listener) {
 	if con, err := grpc.Dial(addr.String(), grpc.WithInsecure()); err != nil {
 		Fail("Connection Dial Failed: " + err.Error())
 	} else {
-		statCli = intRPC.NewMessageStatsClient(con)
+		prvCli = intRPC.NewMessageStatsClient(con)
 		clicons = append(clicons, con)
 	}
 }
