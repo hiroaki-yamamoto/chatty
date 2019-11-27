@@ -18,6 +18,8 @@ import (
 var _ = Describe("InternalServer", func() {
 	Context("With Initial Model", func() {
 		var expMsgs []*intRPC.StatsResponse
+		var statsCli intRPC.MessageStats_StatsClient
+		var stopStats context.CancelFunc
 		BeforeEach(func() {
 			const numTopics = 40
 			const numResp = 40
@@ -57,12 +59,20 @@ var _ = Describe("InternalServer", func() {
 					msgs = append(msgs, model)
 				}
 			}
-			ctx, cancel := cfg.Db.TimeoutContext(context.Background())
-			defer cancel()
+			ctx, cancelInsert := cfg.Db.TimeoutContext(context.Background())
+			defer cancelInsert()
 			_, err := db.Collection(srvName).InsertMany(ctx, msgs)
+			Expect(err).Should(Succeed())
+
+			var statsCtx context.Context
+			statsCtx, stopStats = context.WithTimeout(
+				context.Background(), 10*time.Second,
+			)
+			statsCli, err = prvCli.Stats(statsCtx)
 			Expect(err).Should(Succeed())
 		})
 		AfterEach(func() {
+			stopStats()
 			ctx, cancel := cfg.Db.TimeoutContext(context.Background())
 			defer cancel()
 			err := db.Collection(srvName).Drop(ctx)
@@ -70,46 +80,53 @@ var _ = Describe("InternalServer", func() {
 			expMsgs = nil
 		})
 		Context("Doesn't contain non-existent model", func() {
-			It("Should recieve stats data", func() {
-				statsCtx, cancelStats := context.WithTimeout(
-					context.Background(), 10*time.Second,
-				)
-				defer cancelStats()
-				statsCli, err := prvCli.Stats(statsCtx)
-				Expect(err).Should(Succeed())
-
-				statsLst := make([]*intRPC.StatsResponse, len(expMsgs))
+			collect := func() (resp []*intRPC.StatsResponse, err error) {
 				var wg sync.WaitGroup
+				wg.Add(2)
 				sendErrCh := make(chan error)
 				recvErrCh := make(chan error)
-				wg.Add(2)
-				go func(errCh chan error) {
+				go func() {
+					defer wg.Done()
+					defer close(sendErrCh)
 					for _, expMsg := range expMsgs {
-						errCh <- statsCli.Send(
+						err := statsCli.Send(
 							&intRPC.StatsRequest{TopicId: expMsg.TopicId},
 						)
-					}
-					wg.Done()
-				}(sendErrCh)
-				go func(errCh chan error) {
-					for i := 0; i < len(statsLst); i++ {
-						stats, err := statsCli.Recv()
-						errCh <- err
 						if err != nil {
+							sendErrCh <- err
 							return
 						}
-						statsLst[i] = stats
 					}
-					wg.Done()
-				}(recvErrCh)
-				for i := 0; i < len(expMsgs); i++ {
-					Expect(<-sendErrCh).Should(Succeed())
-					Expect(<-recvErrCh).Should(Succeed())
+				}()
+				go func() {
+					defer wg.Done()
+					defer close(recvErrCh)
+					for i := 0; i < len(expMsgs); i++ {
+						stats, err := statsCli.Recv()
+						if err != nil {
+							recvErrCh <- err
+							return
+						}
+						resp = append(resp, stats)
+					}
+				}()
+				if sendErr, opened := <-sendErrCh; sendErr != nil && opened {
+					err = sendErr
+				}
+				if recvErr, opened := <-recvErrCh; recvErr != nil && opened {
+					err = recvErr
 				}
 				wg.Wait()
+				return
+			}
+			It("Should recieve stats data", func() {
+				statsLst, err := collect()
+				Expect(err).Should(Succeed())
 				Expect(len(statsLst)).Should(Equal(len(expMsgs)))
 				Expect(statsLst).Should(ConsistOf(expMsgs))
-			}, 4000)
+			})
+			// It("Should receive continuously", func() {
+			// })
 		})
 	})
 })
