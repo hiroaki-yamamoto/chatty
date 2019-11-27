@@ -2,6 +2,7 @@ package server_test
 
 import (
 	"context"
+	"math/rand"
 	"strconv"
 	"sync"
 	"time"
@@ -13,6 +14,7 @@ import (
 
 	intRPC "github.com/hiroaki-yamamoto/real/backend/message/rpc"
 	. "github.com/hiroaki-yamamoto/real/backend/message/server"
+	"github.com/hiroaki-yamamoto/real/backend/rpc"
 )
 
 var _ = Describe("InternalServer", func() {
@@ -125,8 +127,42 @@ var _ = Describe("InternalServer", func() {
 				Expect(len(statsLst)).Should(Equal(len(expMsgs)))
 				Expect(statsLst).Should(ConsistOf(expMsgs))
 			})
-			// It("Should receive continuously", func() {
-			// })
+			It("Should receive continuously", func() {
+				_, err := collect()
+				Expect(err).Should(Succeed())
+
+				targetMsg := expMsgs[rand.Intn(len(expMsgs))]
+				sendErrCh := make(chan error)
+				recvErrCh := make(chan error)
+				statsCh := make(chan *intRPC.StatsResponse)
+
+				go func() {
+					defer close(sendErrCh)
+					ctx, cancel := context.WithTimeout(
+						context.Background(), 3*time.Second,
+					)
+					defer cancel()
+					_, err := pubCli.Post(ctx, &rpc.PostRequest{
+						TopicId:   targetMsg.GetTopicId(),
+						Name:      "<p>Test User </p>",
+						Message:   `This is a <a href="javascript.alert('hello');">test</a>`,
+						Recaptcha: "PASSED",
+						Bump:      true,
+					})
+					sendErrCh <- err
+				}()
+				go func() {
+					defer close(recvErrCh)
+					defer close(statsCh)
+					stats, err := statsCli.Recv()
+					recvErrCh <- err
+					statsCh <- stats
+				}()
+				Expect(<-sendErrCh).Should(Succeed())
+				Expect(<-recvErrCh).Should(Succeed())
+				targetMsg.NumMsgs++
+				Expect(<-statsCh).Should(Equal(targetMsg))
+			})
 		})
 	})
 })

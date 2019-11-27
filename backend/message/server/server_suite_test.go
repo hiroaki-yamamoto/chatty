@@ -2,8 +2,10 @@ package server_test
 
 import (
 	"context"
+	"math/rand"
 	"net"
 	"testing"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/hiroaki-yamamoto/real/backend/config"
@@ -35,6 +37,7 @@ func TestServer(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
+	rand.Seed(time.Now().UTC().Unix())
 	setCfg()
 	mockValidation()
 	startBroker()
