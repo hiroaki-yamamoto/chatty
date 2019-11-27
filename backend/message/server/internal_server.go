@@ -3,6 +3,7 @@ package server
 import (
 	"sync"
 
+	"github.com/golang/protobuf/ptypes/timestamp"
 	prvRPC "github.com/hiroaki-yamamoto/real/backend/message/rpc"
 	"github.com/hiroaki-yamamoto/real/backend/rpc"
 	"github.com/nats-io/nats.go"
@@ -10,6 +11,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	pr "go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // InternalServer is a server to provide internal information like stats info.
@@ -67,9 +69,24 @@ func (me *InternalServer) Stats(
 			if err != nil {
 				break
 			}
+			var lastBumpDoc Model
+			lastBumpDocCur, err := col.Find(
+				srv.Context(),
+				bson.M{"bump": true, "topicid": topicID},
+				options.Find().SetSort(
+					bson.M{"posttime": -1},
+				).SetLimit(1),
+			)
+			for lastBumpDocCur.Next(srv.Context()) {
+				lastBumpDocCur.Decode(&lastBumpDoc)
+			}
 			resp := &prvRPC.StatsResponse{
 				TopicId: topicID.Hex(),
 				NumMsgs: numDoc,
+				LastBump: &timestamp.Timestamp{
+					Seconds: lastBumpDoc.PostTime.Unix(),
+					Nanos:   int32(lastBumpDoc.PostTime.Nanosecond()),
+				},
 			}
 			err = srv.Send(resp)
 			if err != nil {

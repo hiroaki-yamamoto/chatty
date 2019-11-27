@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/golang/protobuf/ptypes/timestamp"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"go.mongodb.org/mongo-driver/bson"
@@ -29,20 +30,15 @@ var _ = Describe("InternalServer", func() {
 			var msgs bson.A
 			for ti := 0; ti < numTopics; ti++ {
 				topicID := pr.NewObjectID()
-				expMsgs[ti] = &intRPC.StatsResponse{
-					TopicId: topicID.Hex(),
-					NumMsgs: int64(numResp - ti),
-				}
 				initPostDate := time.Now().UTC()
 				initPostDate = initPostDate.Add(
 					-time.Duration(initPostDate.Minute()) * time.Minute,
 				).Add(
 					-time.Duration(initPostDate.Second()) * time.Second,
 				).Add(
-					-time.Duration(initPostDate.Nanosecond()) * time.Nanosecond,
-				).Add(
 					time.Duration(ti) * time.Minute,
 				)
+				lastBump := initPostDate
 				for ri := ti; ri < numResp; ri++ {
 					msgNum := strconv.Itoa(ri)
 					if len(msgNum) < 1 {
@@ -59,6 +55,17 @@ var _ = Describe("InternalServer", func() {
 						Bump: ri&0x01 == 0x01,
 					}
 					msgs = append(msgs, model)
+					if model.Bump && model.PostTime.After(lastBump) {
+						lastBump = model.PostTime
+					}
+				}
+				expMsgs[ti] = &intRPC.StatsResponse{
+					TopicId: topicID.Hex(),
+					NumMsgs: int64(numResp - ti),
+					LastBump: &timestamp.Timestamp{
+						Seconds: lastBump.Unix(),
+						Nanos:   int32((lastBump.Nanosecond() / 1000000) * 1000000),
+					},
 				}
 			}
 			ctx, cancelInsert := cfg.Db.TimeoutContext(context.Background())
@@ -161,7 +168,18 @@ var _ = Describe("InternalServer", func() {
 				Expect(<-sendErrCh).Should(Succeed())
 				Expect(<-recvErrCh).Should(Succeed())
 				targetMsg.NumMsgs++
-				Expect(<-statsCh).Should(Equal(targetMsg))
+				stats := <-statsCh
+				Expect(time.Unix(
+					stats.GetLastBump().GetSeconds(),
+					int64(stats.GetLastBump().GetNanos()),
+				)).Should(BeTemporally(
+					">", time.Unix(
+						targetMsg.GetLastBump().GetSeconds(),
+						int64(targetMsg.GetLastBump().GetNanos()),
+					),
+				))
+				stats.LastBump = targetMsg.GetLastBump()
+				Expect(stats).Should(Equal(targetMsg))
 			})
 		})
 	})
