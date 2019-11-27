@@ -32,21 +32,23 @@ func (me *InternalServer) Stats(
 	srv prvRPC.MessageStats_StatsServer,
 ) (err error) {
 	var req *prvRPC.StatsRequest
-	var topicID pr.ObjectID
 	var numDoc int64
+	var topics []*prvRPC.StatsResponse
+
 	for {
 		req, err = srv.Recv()
 		if err != nil {
-			return nil
+			break
 		}
+		var topicID pr.ObjectID
 		topicID, err = pr.ObjectIDFromHex(req.GetTopicId())
 		if err != nil {
-			return nil
+			break
 		}
 		col := me.collection()
 		numDoc, err = col.CountDocuments(srv.Context(), bson.M{"topicid": topicID})
 		if err != nil {
-			return
+			break
 		}
 		resp := &prvRPC.StatsResponse{
 			TopicId: topicID.Hex(),
@@ -54,8 +56,17 @@ func (me *InternalServer) Stats(
 		}
 		err = srv.Send(resp)
 		if err != nil {
-			return
+			break
 		}
+		topics <- &statsSubscriber{
+			TopicID: topicID,
+			Resp:    resp,
+		}
+		sub, err := me.subscribe(topicID.Hex(), topics[topicID].MsgCh)
+		if err != nil {
+			break
+		}
+		defer sub.Unsubscribe()
 
 		go func() {
 			msgCh := make(chan *nats.Msg)
@@ -84,4 +95,5 @@ func (me *InternalServer) Stats(
 			}
 		}()
 	}
+	return
 }
