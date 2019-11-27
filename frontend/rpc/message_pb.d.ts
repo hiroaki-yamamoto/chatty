@@ -7,6 +7,9 @@ export class Message extends jspb.Message {
   getId(): string;
   setId(value: string): void;
 
+  getTopicid(): string;
+  setTopicid(value: string): void;
+
   getSendername(): string;
   setSendername(value: string): void;
 
@@ -17,6 +20,9 @@ export class Message extends jspb.Message {
 
   getMessage(): string;
   setMessage(value: string): void;
+
+  getBump(): boolean;
+  setBump(value: boolean): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Message.AsObject;
@@ -29,9 +35,11 @@ export class Message extends jspb.Message {
 export namespace Message {
   export type AsObject = {
     id: string,
+    topicid: string,
     sendername: string,
     posttime?: google_protobuf_timestamp_pb.Timestamp.AsObject,
     message: string,
+    bump: boolean,
   }
 }
 
@@ -64,8 +72,8 @@ export class PostRequest extends jspb.Message {
   getName(): string;
   setName(value: string): void;
 
-  getNodump(): boolean;
-  setNodump(value: boolean): void;
+  getBump(): boolean;
+  setBump(value: boolean): void;
 
   getMessage(): string;
   setMessage(value: string): void;
@@ -85,7 +93,7 @@ export namespace PostRequest {
   export type AsObject = {
     topicid: string,
     name: string,
-    nodump: boolean,
+    bump: boolean,
     message: string,
     recaptcha: string,
   }

@@ -51,6 +51,7 @@ func (me *Model) Store(
 func (me *Model) ToRPCMsg(escape bool) *rpc.Message {
 	ret := &rpc.Message{
 		Id:         me.ID.Hex(),
+		TopicId:    me.TopicID.Hex(),
 		SenderName: me.SenderName,
 		PostTime: &timestamp.Timestamp{
 			Seconds: me.PostTime.Unix(),

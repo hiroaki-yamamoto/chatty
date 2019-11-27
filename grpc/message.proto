@@ -7,10 +7,11 @@ import "status.proto";
 
 message Message {
   string id = 1;
-  string senderName = 2;
-  google.protobuf.Timestamp postTime = 3;
-  string message = 4;
-  bool bump = 5;
+  string topicId = 2;
+  string senderName = 3;
+  google.protobuf.Timestamp postTime = 4;
+  string message = 5;
+  bool bump = 6;
 }
 
 message MessageRequest {

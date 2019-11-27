@@ -1,6 +1,8 @@
 package server
 
 import (
+	"sync"
+
 	prvRPC "github.com/hiroaki-yamamoto/real/backend/message/rpc"
 	"github.com/hiroaki-yamamoto/real/backend/rpc"
 	"github.com/nats-io/nats.go"
@@ -33,67 +35,86 @@ func (me *InternalServer) Stats(
 ) (err error) {
 	var req *prvRPC.StatsRequest
 	var numDoc int64
-	var topics []*prvRPC.StatsResponse
+	statsStore := make(map[pr.ObjectID]*prvRPC.StatsResponse)
 
-	for {
-		req, err = srv.Recv()
-		if err != nil {
-			break
+	var subscriptions []*nats.Subscription
+	defer func() {
+		for _, sub := range subscriptions {
+			sub.Unsubscribe()
 		}
-		var topicID pr.ObjectID
-		topicID, err = pr.ObjectIDFromHex(req.GetTopicId())
-		if err != nil {
-			break
-		}
-		col := me.collection()
-		numDoc, err = col.CountDocuments(srv.Context(), bson.M{"topicid": topicID})
-		if err != nil {
-			break
-		}
-		resp := &prvRPC.StatsResponse{
-			TopicId: topicID.Hex(),
-			NumMsgs: numDoc,
-		}
-		err = srv.Send(resp)
-		if err != nil {
-			break
-		}
-		topics <- &statsSubscriber{
-			TopicID: topicID,
-			Resp:    resp,
-		}
-		sub, err := me.subscribe(topicID.Hex(), topics[topicID].MsgCh)
-		if err != nil {
-			break
-		}
-		defer sub.Unsubscribe()
+	}()
 
-		go func() {
-			msgCh := make(chan *nats.Msg)
-			defer close(msgCh)
+	msgCh := make(chan *nats.Msg, 1024)
+	defer close(msgCh)
+
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	go func() {
+		defer wg.Done()
+		for {
+			req, err = srv.Recv()
+			if err != nil {
+				break
+			}
+			var topicID pr.ObjectID
+			topicID, err = pr.ObjectIDFromHex(req.GetTopicId())
+			if err != nil {
+				break
+			}
+			col := me.collection()
+			numDoc, err = col.CountDocuments(srv.Context(), bson.M{"topicid": topicID})
+			if err != nil {
+				break
+			}
+			resp := &prvRPC.StatsResponse{
+				TopicId: topicID.Hex(),
+				NumMsgs: numDoc,
+			}
+			err = srv.Send(resp)
+			if err != nil {
+				break
+			}
 			sub, err := me.subscribe(topicID.Hex(), msgCh)
 			if err != nil {
-				return
+				break
 			}
-			defer sub.Unsubscribe()
-			for {
-				select {
-				case rec := <-msgCh:
-					var msg rpc.Message
-					err = msgpack.Unmarshal(rec.Data, &msg)
-					if err != nil {
-						return
-					}
-					resp.NumMsgs++
-					if msg.GetBump() {
-						resp.LastBump = msg.GetPostTime()
-					}
-					srv.Send(resp)
-				case <-srv.Context().Done():
+			subscriptions = append(subscriptions, sub)
+			statsStore[topicID] = resp
+			select {
+			case <-srv.Context().Done():
+				return
+			default:
+			}
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		for {
+			select {
+			case rec := <-msgCh:
+				var msg rpc.Message
+				err = msgpack.Unmarshal(rec.Data, &msg)
+				if err != nil {
 					return
 				}
+				topicID, err := pr.ObjectIDFromHex(msg.TopicId)
+				if err != nil {
+					return
+				}
+				resp := statsStore[topicID]
+				resp.NumMsgs++
+				if msg.GetBump() {
+					resp.LastBump = msg.GetPostTime()
+				}
+				srv.Send(resp)
+			case <-srv.Context().Done():
+				return
 			}
-		}()
-	}
+		}
+	}()
+
+	wg.Wait()
 	return
 }

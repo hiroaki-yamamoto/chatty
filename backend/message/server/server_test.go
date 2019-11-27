@@ -54,6 +54,7 @@ var _ = Describe("Message Server", func() {
 			for count := 0; count < 45; count++ {
 				countTxt := strconv.Itoa(count)
 				msgToStream := &rpc.Message{
+					TopicId:    topicID.Hex(),
 					SenderName: "<h1>Test Man</h1>" + countTxt,
 					Message: fmt.Sprintf(
 						"This is an %s example %d%s post from testman.",
@@ -126,6 +127,7 @@ var _ = Describe("Message Server", func() {
 					cols[i] = model
 					models[i] = &rpc.Message{
 						Id:         model.ID.Hex(),
+						TopicId:    model.TopicID.Hex(),
 						SenderName: html.EscapeString(model.SenderName),
 						PostTime: &timestamp.Timestamp{
 							Seconds: model.PostTime.Unix(),
