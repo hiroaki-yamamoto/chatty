@@ -32,7 +32,8 @@ var _ = Describe("InternalServer", func() {
 				topicID := pr.NewObjectID()
 				initPostDate := time.Now().UTC()
 				initPostDate = initPostDate.Add(
-					(-time.Duration(initPostDate.Hour()) * time.Hour) -
+					(-1 * time.Hour) -
+						(time.Duration(initPostDate.Hour()) * time.Hour) -
 						(time.Duration(initPostDate.Minute()) * time.Minute) -
 						(time.Duration(initPostDate.Second()) * time.Second),
 				).Add(
