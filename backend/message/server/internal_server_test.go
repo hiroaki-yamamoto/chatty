@@ -89,9 +89,15 @@ var _ = Describe("InternalServer", func() {
 			Expect(err).Should(Succeed())
 			expMsgs = nil
 		})
+
+		Context("Contains non-existent model", func() {
+
+		})
 		Context("Doesn't contain non-existent model", func() {
-			collect := func() (resp []*intRPC.StatsResponse, err error) {
+			var statsLst []*intRPC.StatsResponse
+			BeforeEach(func() {
 				var wg sync.WaitGroup
+				var err error
 				wg.Add(2)
 				sendErrCh := make(chan error)
 				recvErrCh := make(chan error)
@@ -117,7 +123,7 @@ var _ = Describe("InternalServer", func() {
 							recvErrCh <- err
 							return
 						}
-						resp = append(resp, stats)
+						statsLst = append(statsLst, stats)
 					}
 				}()
 				if sendErr, opened := <-sendErrCh; sendErr != nil && opened {
@@ -127,18 +133,13 @@ var _ = Describe("InternalServer", func() {
 					err = recvErr
 				}
 				wg.Wait()
-				return
-			}
-			It("Should recieve stats data", func() {
-				statsLst, err := collect()
 				Expect(err).Should(Succeed())
+			})
+			It("Should recieve stats data", func() {
 				Expect(len(statsLst)).Should(Equal(len(expMsgs)))
 				Expect(statsLst).Should(ConsistOf(expMsgs))
 			})
 			It("Should receive continuously", func() {
-				_, err := collect()
-				Expect(err).Should(Succeed())
-
 				targetMsg := expMsgs[rand.Intn(len(expMsgs))]
 				sendErrCh := make(chan error)
 				recvErrCh := make(chan error)
