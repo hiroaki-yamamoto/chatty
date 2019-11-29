@@ -89,11 +89,7 @@ var _ = Describe("InternalServer", func() {
 			Expect(err).Should(Succeed())
 			expMsgs = nil
 		})
-
-		Context("Contains non-existent model", func() {
-
-		})
-		Context("Doesn't contain non-existent model", func() {
+		Describe("Request all the model", func() {
 			var statsLst []*intRPC.StatsResponse
 			BeforeEach(func() {
 				var wg sync.WaitGroup
@@ -134,55 +130,70 @@ var _ = Describe("InternalServer", func() {
 				}
 				wg.Wait()
 				Expect(err).Should(Succeed())
-			})
-			It("Should recieve stats data", func() {
-				Expect(len(statsLst)).Should(Equal(len(expMsgs)))
-				Expect(statsLst).Should(ConsistOf(expMsgs))
-			})
-			It("Should receive continuously", func() {
-				targetMsg := expMsgs[rand.Intn(len(expMsgs))]
-				sendErrCh := make(chan error)
-				recvErrCh := make(chan error)
-				statsCh := make(chan *intRPC.StatsResponse)
+      })
+      Context("Without non-existence topic ID request", func() {
+        It("Should recieve stats data", func() {
+          Expect(len(statsLst)).Should(Equal(len(expMsgs)))
+          Expect(statsLst).Should(ConsistOf(expMsgs))
+        })
+        It("Should receive continuously", func() {
+          targetMsg := expMsgs[rand.Intn(len(expMsgs))]
+          sendErrCh := make(chan error)
+          recvErrCh := make(chan error)
+          statsCh := make(chan *intRPC.StatsResponse)
 
-				go func() {
-					defer close(sendErrCh)
-					ctx, cancel := context.WithTimeout(
-						context.Background(), 3*time.Second,
-					)
-					defer cancel()
-					_, err := pubCli.Post(ctx, &rpc.PostRequest{
-						TopicId:   targetMsg.GetTopicId(),
-						Name:      "<p>Test User </p>",
-						Message:   `This is a <a href="javascript.alert('hello');">test</a>`,
-						Recaptcha: "PASSED",
-						Bump:      true,
-					})
-					sendErrCh <- err
-				}()
-				go func() {
-					defer close(recvErrCh)
-					defer close(statsCh)
-					stats, err := statsCli.Recv()
-					recvErrCh <- err
-					statsCh <- stats
-				}()
-				Expect(<-sendErrCh).Should(Succeed())
-				Expect(<-recvErrCh).Should(Succeed())
-				targetMsg.NumMsgs++
-				stats := <-statsCh
-				Expect(time.Unix(
-					stats.GetLastBump().GetSeconds(),
-					int64(stats.GetLastBump().GetNanos()),
-				)).Should(BeTemporally(
-					">", time.Unix(
-						targetMsg.GetLastBump().GetSeconds(),
-						int64(targetMsg.GetLastBump().GetNanos()),
-					),
-				))
-				stats.LastBump = targetMsg.GetLastBump()
-				Expect(stats).Should(Equal(targetMsg))
-			})
+          go func() {
+            defer close(sendErrCh)
+            ctx, cancel := context.WithTimeout(
+              context.Background(), 3*time.Second,
+            )
+            defer cancel()
+            _, err := pubCli.Post(ctx, &rpc.PostRequest{
+              TopicId:   targetMsg.GetTopicId(),
+              Name:      "<p>Test User </p>",
+              Message:   `This is a <a href="javascript.alert('hello');">test</a>`,
+              Recaptcha: "PASSED",
+              Bump:      true,
+            })
+            sendErrCh <- err
+          }()
+          go func() {
+            defer close(recvErrCh)
+            defer close(statsCh)
+            stats, err := statsCli.Recv()
+            recvErrCh <- err
+            statsCh <- stats
+          }()
+          Expect(<-sendErrCh).Should(Succeed())
+          Expect(<-recvErrCh).Should(Succeed())
+          targetMsg.NumMsgs++
+          stats := <-statsCh
+          Expect(time.Unix(
+            stats.GetLastBump().GetSeconds(),
+            int64(stats.GetLastBump().GetNanos()),
+          )).Should(BeTemporally(
+            ">", time.Unix(
+              targetMsg.GetLastBump().GetSeconds(),
+              int64(targetMsg.GetLastBump().GetNanos()),
+            ),
+          ))
+          stats.LastBump = targetMsg.GetLastBump()
+          Expect(stats).Should(Equal(targetMsg))
+        })
+      })
+      Context("With non-existence topic ID request", func() {
+        nonExistence := make([]pr.ObjectID, len(expMsgs))
+        BeforeEach(func() {
+          for i := 0; i < len(expMsgs); i++ {
+            topicID := pr.NewObjectID()
+            err := statsCli.Send(
+              &intRPC.StatsRequest{TopicId: topicID.Hex()},
+            )
+            Expect(err).Should(Succeed())
+            nonExistence[i] = topicID
+          }
+        })
+      })
 		})
 	})
 })
