@@ -4,7 +4,6 @@ import (
 	"context"
 	"math/rand"
 	"strconv"
-	"sync"
 	"time"
 
 	"github.com/golang/protobuf/ptypes/timestamp"
@@ -76,7 +75,7 @@ var _ = Describe("InternalServer", func() {
 
 			var statsCtx context.Context
 			statsCtx, stopStats = context.WithTimeout(
-				context.Background(), 10*time.Second,
+				context.Background(), 3*time.Second,
 			)
 			statsCli, err = prvCli.Stats(statsCtx)
 			Expect(err).Should(Succeed())
@@ -92,13 +91,10 @@ var _ = Describe("InternalServer", func() {
 		Describe("Request all the model", func() {
 			var statsLst []*intRPC.StatsResponse
 			BeforeEach(func() {
-				var wg sync.WaitGroup
 				var err error
-				wg.Add(2)
 				sendErrCh := make(chan error)
 				recvErrCh := make(chan error)
 				go func() {
-					defer wg.Done()
 					defer close(sendErrCh)
 					for _, expMsg := range expMsgs {
 						err := statsCli.Send(
@@ -111,89 +107,90 @@ var _ = Describe("InternalServer", func() {
 					}
 				}()
 				go func() {
-					defer wg.Done()
 					defer close(recvErrCh)
 					for i := 0; i < len(expMsgs); i++ {
-						stats, err := statsCli.Recv()
+						var stats *intRPC.StatsResponse
+						stats, err = statsCli.Recv()
 						if err != nil {
 							recvErrCh <- err
-							return
 						}
 						statsLst = append(statsLst, stats)
 					}
+					return
 				}()
-				if sendErr, opened := <-sendErrCh; sendErr != nil && opened {
-					err = sendErr
+				if recvErr, opened := <-recvErrCh; opened {
+					Expect(recvErr).Should(Succeed())
 				}
-				if recvErr, opened := <-recvErrCh; recvErr != nil && opened {
-					err = recvErr
+				if sendErr, opened := <-sendErrCh; opened {
+					Expect(sendErr).Should(Succeed())
 				}
-				wg.Wait()
-				Expect(err).Should(Succeed())
-      })
-      Context("Without non-existence topic ID request", func() {
-        It("Should recieve stats data", func() {
-          Expect(len(statsLst)).Should(Equal(len(expMsgs)))
-          Expect(statsLst).Should(ConsistOf(expMsgs))
-        })
-        It("Should receive continuously", func() {
-          targetMsg := expMsgs[rand.Intn(len(expMsgs))]
-          sendErrCh := make(chan error)
-          recvErrCh := make(chan error)
-          statsCh := make(chan *intRPC.StatsResponse)
+			})
+			Context("Without non-existence topic ID request", func() {
+				It("Should recieve stats data", func() {
+					num := len(expMsgs)
+					Expect(len(statsLst)).Should(Equal(num))
+					Expect(statsLst).Should(ConsistOf(expMsgs))
+				})
+				It("Should receive continuously", func() {
+					targetMsg := expMsgs[rand.Intn(len(expMsgs))]
+					sendErrCh := make(chan error)
+					recvErrCh := make(chan error)
+					statsCh := make(chan *intRPC.StatsResponse)
 
-          go func() {
-            defer close(sendErrCh)
-            ctx, cancel := context.WithTimeout(
-              context.Background(), 3*time.Second,
-            )
-            defer cancel()
-            _, err := pubCli.Post(ctx, &rpc.PostRequest{
-              TopicId:   targetMsg.GetTopicId(),
-              Name:      "<p>Test User </p>",
-              Message:   `This is a <a href="javascript.alert('hello');">test</a>`,
-              Recaptcha: "PASSED",
-              Bump:      true,
-            })
-            sendErrCh <- err
-          }()
-          go func() {
-            defer close(recvErrCh)
-            defer close(statsCh)
-            stats, err := statsCli.Recv()
-            recvErrCh <- err
-            statsCh <- stats
-          }()
-          Expect(<-sendErrCh).Should(Succeed())
-          Expect(<-recvErrCh).Should(Succeed())
-          targetMsg.NumMsgs++
-          stats := <-statsCh
-          Expect(time.Unix(
-            stats.GetLastBump().GetSeconds(),
-            int64(stats.GetLastBump().GetNanos()),
-          )).Should(BeTemporally(
-            ">", time.Unix(
-              targetMsg.GetLastBump().GetSeconds(),
-              int64(targetMsg.GetLastBump().GetNanos()),
-            ),
-          ))
-          stats.LastBump = targetMsg.GetLastBump()
-          Expect(stats).Should(Equal(targetMsg))
-        })
-      })
-      Context("With non-existence topic ID request", func() {
-        nonExistence := make([]pr.ObjectID, len(expMsgs))
-        BeforeEach(func() {
-          for i := 0; i < len(expMsgs); i++ {
-            topicID := pr.NewObjectID()
-            err := statsCli.Send(
-              &intRPC.StatsRequest{TopicId: topicID.Hex()},
-            )
-            Expect(err).Should(Succeed())
-            nonExistence[i] = topicID
-          }
-        })
-      })
+					go func() {
+						defer close(sendErrCh)
+						ctx, cancel := context.WithTimeout(
+							context.Background(), 3*time.Second,
+						)
+						defer cancel()
+						_, err := pubCli.Post(ctx, &rpc.PostRequest{
+							TopicId:   targetMsg.GetTopicId(),
+							Name:      "<p>Test User </p>",
+							Message:   `This is a <a href="javascript.alert('hello');">test</a>`,
+							Recaptcha: "PASSED",
+							Bump:      true,
+						})
+						sendErrCh <- err
+					}()
+					go func() {
+						defer close(recvErrCh)
+						defer close(statsCh)
+						stats, err := statsCli.Recv()
+						recvErrCh <- err
+						statsCh <- stats
+					}()
+					Expect(<-sendErrCh).Should(Succeed())
+					Expect(<-recvErrCh).Should(Succeed())
+					targetMsg.NumMsgs++
+					stats := <-statsCh
+					Expect(time.Unix(
+						stats.GetLastBump().GetSeconds(),
+						int64(stats.GetLastBump().GetNanos()),
+					)).Should(BeTemporally(
+						">", time.Unix(
+							targetMsg.GetLastBump().GetSeconds(),
+							int64(targetMsg.GetLastBump().GetNanos()),
+						),
+					))
+					stats.LastBump = targetMsg.GetLastBump()
+					Expect(stats).Should(Equal(targetMsg))
+				})
+			})
+			Context("With non-existence topic ID request", func() {
+				nonExistence := make([]pr.ObjectID, len(expMsgs))
+				BeforeEach(func() {
+					for i := 0; i < len(expMsgs); i++ {
+						topicID := pr.NewObjectID()
+						err := statsCli.Send(
+							&intRPC.StatsRequest{TopicId: topicID.Hex()},
+						)
+						Expect(err).Should(Succeed())
+						nonExistence[i] = topicID
+					}
+				})
+				// It("Shouldn't receive any extra fields", func() {
+				// })
+			})
 		})
 	})
 })
