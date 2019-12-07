@@ -19,12 +19,12 @@ import (
 
 var _ = Describe("InternalServer", func() {
 	Context("With Initial Model", func() {
+		const numTopics = 40
+		const numResp = 40
 		var expMsgs []*intRPC.StatsResponse
 		var statsCli intRPC.MessageStats_StatsClient
 		var stopStats context.CancelFunc
 		BeforeEach(func() {
-			const numTopics = 40
-			const numResp = 40
 			expMsgs = make([]*intRPC.StatsResponse, numTopics)
 			var msgs bson.A
 			for ti := 0; ti < numTopics; ti++ {
@@ -177,9 +177,9 @@ var _ = Describe("InternalServer", func() {
 				})
 			})
 			Context("With non-existence topic ID request", func() {
-				nonExistence := make([]pr.ObjectID, len(expMsgs))
+				nonExistence := make([]pr.ObjectID, numTopics)
 				BeforeEach(func() {
-					for i := 0; i < len(expMsgs); i++ {
+					for i := 0; i < len(nonExistence); i++ {
 						topicID := pr.NewObjectID()
 						err := statsCli.Send(
 							&intRPC.StatsRequest{TopicId: topicID.Hex()},
@@ -188,8 +188,31 @@ var _ = Describe("InternalServer", func() {
 						nonExistence[i] = topicID
 					}
 				})
-				// It("Shouldn't receive any extra fields", func() {
-				// })
+				It("Shouldn't receive any extra fields", func() {
+					recvCh := make(chan *intRPC.StatsResponse)
+					errCh := make(chan error)
+					defer close(recvCh)
+					defer close(errCh)
+					go func() {
+						stats, err := statsCli.Recv()
+						if _, open := <-errCh; err != nil && open {
+							errCh <- err
+						}
+						if _, open := <-recvCh; stats != nil && open {
+							recvCh <- stats
+						}
+					}()
+					for {
+						select {
+						case stat := <-recvCh:
+							Expect(stat).To(BeNil())
+						case err := <-errCh:
+							Expect(err).To(Succeed())
+						case <-time.After(100 * time.Millisecond):
+							return
+						}
+					}
+				})
 			})
 		})
 	})

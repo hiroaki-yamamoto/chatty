@@ -77,6 +77,9 @@ func (me *InternalServer) Stats(
 					bson.M{"posttime": -1},
 				).SetLimit(1),
 			)
+			if err != nil {
+				break
+			}
 			for lastBumpDocCur.Next(srv.Context()) {
 				lastBumpDocCur.Decode(&lastBumpDoc)
 			}
