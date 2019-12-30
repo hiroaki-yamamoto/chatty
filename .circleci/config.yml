@@ -83,7 +83,7 @@ workflows:
       - message:
           filters:
             << : *dev_filter
-      - frontendBuild:
+      - build:
           filters:
             << : *dev_filter
   version_tag:
