@@ -51,23 +51,6 @@ services:
       - broker
     environment:
       CONFIG_NAME: devel
-  test:
-    build:
-      context: ./backend
-      dockerfile: devel.dockerfile
-      args:
-        PKGNAME: test
-    stop_signal: SIGINT
-    volumes:
-        - ./backend:/opt/code
-        - ./config:/etc/real
-    depends_on:
-        - testdb
-        - testbroker
-    environment:
-        CONFIG_NAME: devel
-    entrypoint:
-      - "./test.sh"
   envoy:
     image: envoyproxy/envoy-alpine
     volumes:
