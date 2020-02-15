@@ -35,8 +35,8 @@ func (me *Model) Store(
 	var res *mongo.InsertOneResult
 	res, err = col.InsertOne(ctx, me)
 	if err != nil {
-		return
-	}
+    return
+  }
 	id, ok := res.InsertedID.(primitive.ObjectID)
 	if !ok {
 		err = errors.New("The returned ID was not ObjectID")
