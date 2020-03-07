@@ -17,7 +17,7 @@ require (
 	github.com/spf13/viper v1.6.2
 	github.com/vmihailenco/msgpack/v4 v4.3.8
 	github.com/xdg/stringprep v1.0.0 // indirect
-	go.mongodb.org/mongo-driver v1.3.0
+	go.mongodb.org/mongo-driver v1.3.1
 	golang.org/x/crypto v0.0.0-20191011191535-87dc89f01550 // indirect
 	golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e // indirect
 	google.golang.org/genproto v0.0.0-20191009194640-548a555dbc03 // indirect
