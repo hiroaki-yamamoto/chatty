@@ -7,7 +7,7 @@ require (
 	github.com/golang/protobuf v1.3.5
 	github.com/hiroaki-yamamoto/recaptcha v1.0.0
 	github.com/nats-io/nats-server/v2 v2.1.0 // indirect
-	github.com/nats-io/nats.go v1.9.1
+	github.com/nats-io/nats.go v1.9.2
 	github.com/onsi/ginkgo v1.12.0
 	github.com/onsi/gomega v1.9.0
 	github.com/pelletier/go-toml v1.5.0 // indirect
@@ -18,7 +18,6 @@ require (
 	github.com/vmihailenco/msgpack/v4 v4.3.11
 	github.com/xdg/stringprep v1.0.0 // indirect
 	go.mongodb.org/mongo-driver v1.3.1
-	golang.org/x/crypto v0.0.0-20191011191535-87dc89f01550 // indirect
 	golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e // indirect
 	google.golang.org/genproto v0.0.0-20191009194640-548a555dbc03 // indirect
 	google.golang.org/grpc v1.28.0
