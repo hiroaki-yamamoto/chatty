@@ -20,5 +20,5 @@ require (
 	go.mongodb.org/mongo-driver v1.3.2
 	golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e // indirect
 	google.golang.org/genproto v0.0.0-20191009194640-548a555dbc03 // indirect
-	google.golang.org/grpc v1.28.1
+	google.golang.org/grpc v1.29.1
 )
