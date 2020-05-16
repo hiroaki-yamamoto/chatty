@@ -4,10 +4,10 @@ go 1.13
 
 require (
 	github.com/go-playground/validator/v10 v10.2.0
-	github.com/golang/protobuf v1.4.1
+	github.com/golang/protobuf v1.4.2
 	github.com/hiroaki-yamamoto/recaptcha v1.1.0
 	github.com/nats-io/nats-server/v2 v2.1.0 // indirect
-	github.com/nats-io/nats.go v1.9.2
+	github.com/nats-io/nats.go v1.10.0
 	github.com/onsi/ginkgo v1.12.0
 	github.com/onsi/gomega v1.10.0
 	github.com/pelletier/go-toml v1.5.0 // indirect
