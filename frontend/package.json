@@ -21,7 +21,7 @@
     "@angular/router": "~9.1.0",
     "grpc-web": "^1.0.7",
     "rxjs": "~6.5.4",
-    "tslib": "^1.10.0",
+    "tslib": "^2.0.0",
     "zone.js": "~0.10.2"
   },
   "devDependencies": {
@@ -40,7 +40,7 @@
     "karma-coverage-istanbul-reporter": "~3.0.0",
     "karma-jasmine": "~3.1.1",
     "karma-jasmine-html-reporter": "^1.5.2",
-    "protractor": "~5.4.3",
+    "protractor": "~7.0.0",
     "ts-node": "~8.10.0",
     "tslint": "~6.1.0",
     "typescript": "3.7.5"
