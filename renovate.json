@@ -27,7 +27,7 @@
       {
         "depTypeList": ["devDependencies"],
         "packageNames": ["typescript"],
-        "allowedVersions": "<3.8.0"
+        "allowedVersions": "<4.0.0"
       }
     ]
   },
