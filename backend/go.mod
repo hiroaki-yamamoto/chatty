@@ -8,8 +8,8 @@ require (
 	github.com/hiroaki-yamamoto/recaptcha v1.1.0
 	github.com/nats-io/nats-server/v2 v2.1.0 // indirect
 	github.com/nats-io/nats.go v1.10.0
-	github.com/onsi/ginkgo v1.14.0
-	github.com/onsi/gomega v1.10.1
+	github.com/onsi/ginkgo v1.14.1
+	github.com/onsi/gomega v1.10.2
 	github.com/pelletier/go-toml v1.5.0 // indirect
 	github.com/spf13/afero v1.2.2 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
@@ -17,6 +17,6 @@ require (
 	github.com/spf13/viper v1.7.1
 	github.com/vmihailenco/msgpack/v4 v4.3.12
 	github.com/xdg/stringprep v1.0.0 // indirect
-	go.mongodb.org/mongo-driver v1.4.0
+	go.mongodb.org/mongo-driver v1.4.1
 	google.golang.org/grpc v1.31.1
 )
