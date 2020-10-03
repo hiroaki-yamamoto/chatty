@@ -3,7 +3,7 @@ module github.com/hiroaki-yamamoto/real/backend
 go 1.13
 
 require (
-	github.com/go-playground/validator/v10 v10.3.0
+	github.com/go-playground/validator/v10 v10.4.0
 	github.com/golang/protobuf v1.4.2
 	github.com/hiroaki-yamamoto/recaptcha v1.1.0
 	github.com/nats-io/nats-server/v2 v2.1.0 // indirect
