@@ -28,6 +28,7 @@
         "depTypeList": ["devDependencies"],
         "packageNames": ["typescript"],
         "allowedVersions": "<4.1.0"
+      }
     ]
   },
   "postUpdateOptions": ["gomodTidy", "npmDedupe"]
